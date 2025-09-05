@@ -1,0 +1,304 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}Dashboard - Administração da Barbearia{% endblock %}
+
+{% block header %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Gráficos de Faturação e Serviços -->
+<div class="row mb-4 g-3">
+    <div class="col-12 col-lg-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0"><i class="fas fa-chart-bar me-2"></i>Faturação Semanal</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height: 300px;">
+                    <canvas id="graficoFaturacao"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0"><i class="fas fa-chart-pie me-2"></i>Popularidade dos Serviços</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height: 300px;">
+                    <canvas id="graficoServicos"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cards de Resumo -->
+<div class="row g-3">
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-body text-center p-4">
+                <div class="mb-3">
+                    <i class="fas fa-calendar-check fa-3x text-primary"></i>
+                </div>
+                <h5 class="card-title">Agendamentos Hoje</h5>
+                <h2 class="display-4 fw-bold">{{ agendamentos_hoje }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-body text-center p-4">
+                <div class="mb-3">
+                    <i class="fas fa-users fa-3x text-success"></i>
+                </div>
+                <h5 class="card-title">Total de Clientes</h5>
+                <h2 class="display-4 fw-bold">{{ total_clientes }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-body text-center p-4">
+                <div class="mb-3">
+                    <i class="fas fa-money-bill-wave fa-3x text-warning"></i>
+                </div>
+                <h5 class="card-title">Faturação Total</h5>
+                <h2 class="display-4 fw-bold">R$ {{ faturacao_total }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    /* Estilos específicos para o dashboard */
+    .chart-container {
+        width: 100%;
+        height: 100%;
+        min-height: 250px;
+    }
+    
+    @media (max-width: 767.98px) {
+        .chart-container {
+            min-height: 200px;
+        }
+        
+        .display-4 {
+            font-size: 2.5rem;
+        }
+    }
+    
+    /* Animações específicas para o dashboard */
+    .card .fa-3x {
+        transition: transform 0.3s ease;
+    }
+    
+    .card:hover .fa-3x {
+        transform: scale(1.2);
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Função para verificar o tamanho da tela e ajustar configurações
+        function isMobile() {
+            return window.innerWidth < 768;
+        }
+        
+        // Cores personalizadas para os gráficos
+        const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim();
+        const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim();
+        const infoColor = getComputedStyle(document.documentElement).getPropertyValue('--info-color').trim();
+        
+        // Cores para os gráficos
+        const cores = [
+            `rgba(${hexToRgb(accentColor)}, 0.8)`,
+            `rgba(${hexToRgb(primaryColor)}, 0.8)`,
+            `rgba(${hexToRgb(infoColor)}, 0.8)`,
+            'rgba(255, 206, 86, 0.8)',
+            'rgba(75, 192, 192, 0.8)',
+            'rgba(153, 102, 255, 0.8)',
+            'rgba(255, 159, 64, 0.8)',
+            'rgba(199, 199, 199, 0.8)',
+            'rgba(83, 102, 255, 0.8)',
+            'rgba(40, 159, 64, 0.8)'
+        ];
+        
+        // Função para converter hex para rgb
+        function hexToRgb(hex) {
+            // Remover o # se existir
+            hex = hex.replace('#', '');
+            
+            // Converter para RGB
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            
+            return `${r}, ${g}, ${b}`;
+        }
+        
+        // Dados para o gráfico de faturação semanal
+        const ctxFaturacao = document.getElementById('graficoFaturacao').getContext('2d');
+        const datas = {{ datas_faturacao|tojson }};
+        const valores = {{ valores_faturacao|tojson }};
+        
+        const graficoFaturacao = new Chart(ctxFaturacao, {
+            type: 'bar',
+            data: {
+                labels: datas,
+                datasets: [{
+                    label: 'Faturação (R$)',
+                    data: valores,
+                    backgroundColor: `rgba(${hexToRgb(infoColor)}, 0.7)`,
+                    borderColor: `rgba(${hexToRgb(infoColor)}, 1)`,
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    maxBarThickness: 50
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'R$ ' + value;
+                            },
+                            font: {
+                                size: isMobile() ? 10 : 12
+                            }
+                        },
+                        grid: {
+                            display: true,
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: {
+                                size: isMobile() ? 10 : 12
+                            }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'R$ ' + context.raw;
+                            }
+                        },
+                        backgroundColor: `rgba(${hexToRgb(primaryColor)}, 0.8)`,
+                        titleFont: {
+                            size: 14,
+                            weight: 'bold'
+                        },
+                        bodyFont: {
+                            size: 13
+                        },
+                        padding: 10,
+                        cornerRadius: 6
+                    }
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+        
+        // Dados para o gráfico de popularidade dos serviços
+        const ctxServicos = document.getElementById('graficoServicos').getContext('2d');
+        const servicos = {{ nomes_servicos|tojson }};
+        const contagens = {{ contagens_servicos|tojson }};
+        
+        const graficoServicos = new Chart(ctxServicos, {
+            type: 'pie',
+            data: {
+                labels: servicos,
+                datasets: [{
+                    data: contagens,
+                    backgroundColor: cores,
+                    borderColor: cores.map(function(cor) { return cor.replace('0.8', '1'); }),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: isMobile() ? 'bottom' : 'right',
+                        labels: {
+                            boxWidth: isMobile() ? 12 : 15,
+                            padding: isMobile() ? 10 : 15,
+                            font: {
+                                size: isMobile() ? 10 : 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return label + ': ' + value + ' (' + percentage + '%)';
+                            }
+                        },
+                        backgroundColor: `rgba(${hexToRgb(primaryColor)}, 0.8)`,
+                        titleFont: {
+                            size: 14,
+                            weight: 'bold'
+                        },
+                        bodyFont: {
+                            size: 13
+                        },
+                        padding: 10,
+                        cornerRadius: 6
+                    }
+                },
+                animation: {
+                    animateRotate: true,
+                    animateScale: true,
+                    duration: 1000,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+        
+        // Ajustar gráficos quando a janela for redimensionada
+        window.addEventListener('resize', function() {
+            // Atualizar posição da legenda no gráfico de serviços
+            graficoServicos.options.plugins.legend.position = isMobile() ? 'bottom' : 'right';
+            graficoServicos.options.plugins.legend.labels.boxWidth = isMobile() ? 12 : 15;
+            graficoServicos.options.plugins.legend.labels.padding = isMobile() ? 10 : 15;
+            graficoServicos.options.plugins.legend.labels.font.size = isMobile() ? 10 : 12;
+            
+            // Atualizar tamanho da fonte nos eixos do gráfico de faturação
+            graficoFaturacao.options.scales.y.ticks.font.size = isMobile() ? 10 : 12;
+            graficoFaturacao.options.scales.x.ticks.font.size = isMobile() ? 10 : 12;
+            
+            // Atualizar os gráficos
+            graficoServicos.update();
+            graficoFaturacao.update();
+        });
+    });
+</script>
+{% endblock %}

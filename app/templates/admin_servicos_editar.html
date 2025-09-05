@@ -1,0 +1,167 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Editar Serviço - Administração da Barbearia{% endblock %}
+
+{% block header %}Editar Serviço{% endblock %}
+
+{% block styles %}
+<style>
+    /* Estilos específicos para a página de edição de serviços */
+    .card {
+        border-radius: var(--border-radius);
+        transition: all 0.3s ease;
+        box-shadow: var(--box-shadow);
+    }
+    
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--box-shadow-hover);
+    }
+    
+    .card-header {
+        border-top-left-radius: var(--border-radius);
+        border-top-right-radius: var(--border-radius);
+        display: flex;
+        align-items: center;
+    }
+    
+    .card-header h5 {
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .card-header h5 i {
+        margin-right: 0.5rem;
+    }
+    
+    /* Responsividade para dispositivos móveis */
+    @media (max-width: 767.98px) {
+        .btn-actions {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .btn-actions .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 mx-auto">
+        <div class="card fade-in">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0"><i class="fas fa-edit me-2"></i>Editar Serviço: {{ servico.nome }}</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('admin_servicos_editar', id=servico.id) }}" method="POST">
+                    <div class="mb-3">
+                        <label for="nome" class="form-label"><i class="fas fa-tag me-1"></i> Nome</label>
+                        <input type="text" class="form-control" id="nome" name="nome" value="{{ servico.nome }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="descricao" class="form-label"><i class="fas fa-align-left me-1"></i> Descrição</label>
+                        <textarea class="form-control" id="descricao" name="descricao" rows="3">{{ servico.descricao }}</textarea>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="preco" class="form-label"><i class="fas fa-money-bill-wave me-1"></i> Preço (R$)</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="preco" name="preco" step="0.01" min="0" value="{{ servico.preco }}" required>
+                                <span class="input-group-text">R$</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="duracao_minutos" class="form-label"><i class="fas fa-clock me-1"></i> Duração (minutos)</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="duracao_minutos" name="duracao_minutos" min="1" value="{{ servico.duracao_minutos }}" required>
+                                <span class="input-group-text">min</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-4 form-check">
+                        <input type="checkbox" class="form-check-input" id="ativo" name="ativo" {% if servico.ativo %}checked{% endif %}>
+                        <label class="form-check-label" for="ativo">
+                            <i class="fas {% if servico.ativo %}fa-toggle-on text-success{% else %}fa-toggle-off text-danger{% endif %} me-1"></i>
+                            Serviço Ativo
+                        </label>
+                    </div>
+                    <div class="d-flex justify-content-between btn-actions">
+                        <a href="{{ url_for('admin_servicos') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Voltar
+                        </a>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-save me-2"></i>Salvar Alterações
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Aplicar animações aos elementos do formulário
+        const applyAnimations = () => {
+            // Animar o card principal
+            const card = document.querySelector('.card.fade-in');
+            setTimeout(() => {
+                card.classList.add('animate__animated', 'animate__fadeIn');
+            }, 100);
+            
+            // Animar os campos do formulário com efeito sequencial
+            const formElements = document.querySelectorAll('.form-control, .form-check, .btn');
+            formElements.forEach((element, index) => {
+                setTimeout(() => {
+                    element.classList.add('animate__animated', 'animate__fadeIn');
+                }, 150 + (index * 50));
+            });
+        };
+        
+        // Executar animações após um pequeno atraso
+        setTimeout(applyAnimations, 100);
+        
+        // Adicionar efeito de hover aos botões
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('mouseenter', function() {
+                if (!this.disabled) {
+                    this.classList.add('animate__animated', 'animate__pulse');
+                }
+            });
+            
+            btn.addEventListener('mouseleave', function() {
+                this.classList.remove('animate__animated', 'animate__pulse');
+            });
+        });
+        
+        // Formatação de valores monetários
+        const precoInput = document.getElementById('preco');
+        precoInput.addEventListener('blur', function() {
+            if (this.value) {
+                this.value = parseFloat(this.value).toFixed(2);
+            }
+        });
+        
+        // Alternar ícone do toggle quando o checkbox é clicado
+        const ativoCheckbox = document.getElementById('ativo');
+        const ativoLabel = document.querySelector('label[for="ativo"]');
+        const ativoIcon = ativoLabel.querySelector('i');
+        
+        ativoCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                ativoIcon.classList.remove('fa-toggle-off', 'text-danger');
+                ativoIcon.classList.add('fa-toggle-on', 'text-success');
+            } else {
+                ativoIcon.classList.remove('fa-toggle-on', 'text-success');
+                ativoIcon.classList.add('fa-toggle-off', 'text-danger');
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Editar Horário - Administração da Barbearia{% endblock %}
+
+{% block header %}Editar Horário de Funcionamento{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Editar Horário para {{ dia.nome }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <form action="{{ url_for('admin_horarios_editar', id=dia.id) }}" method="POST" id="form-abertura">
+                            <div class="mb-3">
+                                <label for="hora_abertura" class="form-label">Hora de Abertura</label>
+                                <input type="time" class="form-control" id="hora_abertura" name="hora_abertura" value="{{ dia.hora_abertura.strftime('%H:%M') }}" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Salvar Hora de Abertura</button>
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <form action="{{ url_for('admin_horarios_editar', id=dia.id) }}" method="POST" id="form-fechamento">
+                            <div class="mb-3">
+                                <label for="hora_fechamento" class="form-label">Hora de Fecho</label>
+                                <input type="time" class="form-control" id="hora_fechamento" name="hora_fechamento" value="{{ dia.hora_fechamento.strftime('%H:%M') }}" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Salvar Hora de Fecho</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <a href="{{ url_for('admin_horarios') }}" class="btn btn-secondary">Voltar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Validação para garantir que a hora de fechamento seja depois da hora de abertura
+        document.getElementById('form-fechamento').addEventListener('submit', function(event) {
+            const abertura = document.getElementById('hora_abertura').value;
+            const fechamento = document.getElementById('hora_fechamento').value;
+            
+            if (fechamento <= abertura) {
+                event.preventDefault();
+                alert('A hora de fecho deve ser posterior à hora de abertura.');
+            }
+        });
+    });
+</script>
+{% endblock %}

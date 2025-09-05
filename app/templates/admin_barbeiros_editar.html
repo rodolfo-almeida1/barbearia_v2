@@ -1,0 +1,180 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Editar Barbeiro - Administração da Barbearia{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Aplicar classes de animação aos elementos
+        const applyAnimations = () => {
+            // Adicionar animações para os elementos com fade-in
+            document.querySelectorAll('.fade-in').forEach((element, index) => {
+                setTimeout(() => {
+                    element.classList.add('animate__animated', 'animate__fadeIn');
+                }, index * 100);
+            });
+        };
+        
+        // Executar animações após um pequeno atraso para garantir que a página esteja carregada
+        setTimeout(applyAnimations, 100);
+        
+        // Adicionar efeito de hover aos botões
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('mouseenter', function() {
+                if (!this.disabled) {
+                    this.classList.add('animate__animated', 'animate__pulse');
+                }
+            });
+            
+            btn.addEventListener('mouseleave', function() {
+                this.classList.remove('animate__animated', 'animate__pulse');
+            });
+        });
+        
+        // Alternar ícone de status quando o checkbox for clicado
+        const ativoCheckbox = document.getElementById('ativo');
+        const statusIcon = document.getElementById('statusIcon');
+        
+        if (ativoCheckbox && statusIcon) {
+            ativoCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    statusIcon.classList.remove('fa-toggle-off', 'text-danger');
+                    statusIcon.classList.add('fa-toggle-on', 'text-success');
+                } else {
+                    statusIcon.classList.remove('fa-toggle-on', 'text-success');
+                    statusIcon.classList.add('fa-toggle-off', 'text-danger');
+                }
+                
+                // Adicionar animação ao ícone
+                statusIcon.classList.add('animate__animated', 'animate__flipInX');
+                setTimeout(() => {
+                    statusIcon.classList.remove('animate__animated', 'animate__flipInX');
+                }, 500);
+            });
+        }
+    });
+</script>
+{% endblock %}
+
+{% block header %}Editar Barbeiro{% endblock %}
+
+{% block styles %}
+<style>
+    /* Estilos específicos para a página de edição de barbeiros */
+    .card {
+        border-radius: var(--border-radius);
+        transition: all 0.3s ease;
+        margin-bottom: 1.5rem;
+        box-shadow: var(--box-shadow);
+    }
+    
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--box-shadow-hover);
+    }
+    
+    .card-header {
+        border-top-left-radius: var(--border-radius);
+        border-top-right-radius: var(--border-radius);
+        display: flex;
+        align-items: center;
+    }
+    
+    .card-header h5 {
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .card-header h5 i {
+        margin-right: 0.5rem;
+    }
+    
+    .form-label {
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+    }
+    
+    .form-label i {
+        margin-right: 0.5rem;
+    }
+    
+    .form-check {
+        display: flex;
+        align-items: center;
+    }
+    
+    .form-check-input {
+        margin-right: 0.5rem;
+    }
+    
+    .toggle-icon {
+        transition: all 0.3s ease;
+        margin-right: 0.5rem;
+    }
+    
+    /* Responsividade para dispositivos móveis */
+    @media (max-width: 767.98px) {
+        .btn-actions {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+        
+        .btn-actions .btn {
+            margin-bottom: 0.5rem;
+            width: 100%;
+        }
+        
+        .btn-actions .btn:last-child {
+            margin-bottom: 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 mx-auto">
+        <div class="card fade-in">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0"><i class="fas fa-user-edit me-2"></i>Editar Barbeiro</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('admin_barbeiros_editar', id=barbeiro.id) }}" method="POST">
+                    <div class="mb-3 fade-in" style="animation-delay: 0.1s">
+                        <label for="nome" class="form-label"><i class="fas fa-user me-1"></i> Nome</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-signature"></i></span>
+                            <input type="text" class="form-control" id="nome" name="nome" value="{{ barbeiro.nome }}" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 fade-in" style="animation-delay: 0.2s">
+                        <label for="especialidade" class="form-label"><i class="fas fa-award me-1"></i> Especialidade</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-certificate"></i></span>
+                            <input type="text" class="form-control" id="especialidade" name="especialidade" value="{{ barbeiro.especialidade }}">
+                        </div>
+                    </div>
+                    <div class="mb-4 form-check fade-in" style="animation-delay: 0.3s">
+                        <input type="checkbox" class="form-check-input" id="ativo" name="ativo" {% if barbeiro.ativo %}checked{% endif %}>
+                        <label class="form-check-label" for="ativo">
+                            <i id="statusIcon" class="fas {% if barbeiro.ativo %}fa-toggle-on text-success{% else %}fa-toggle-off text-danger{% endif %} toggle-icon"></i>
+                            Barbeiro Ativo
+                        </label>
+                    </div>
+                    <div class="d-flex justify-content-between btn-actions fade-in" style="animation-delay: 0.4s">
+                        <a href="{{ url_for('admin_barbeiros') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Voltar
+                        </a>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-save me-2"></i>Salvar Alterações
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

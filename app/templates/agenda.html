@@ -1,0 +1,655 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}Agenda - Administração da Barbearia{% endblock %}
+
+{% block header %}Agenda de Agendamentos{% endblock %}
+
+{% block styles %}
+<!-- SweetAlert2 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.min.css">
+
+<style>
+    /* Estilos específicos para a página de agenda */
+    .card {
+        border-radius: var(--border-radius);
+        transition: all 0.3s ease;
+        margin-bottom: 1.5rem;
+    }
+    
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--box-shadow-hover);
+    }
+    
+    .card-header {
+        border-top-left-radius: var(--border-radius);
+        border-top-right-radius: var(--border-radius);
+        display: flex;
+        align-items: center;
+    }
+    
+    .card-header h5 {
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .card-header h5 i {
+        margin-right: 0.5rem;
+    }
+    
+    .table-responsive {
+        border-radius: var(--border-radius);
+        overflow: hidden;
+    }
+    
+    .btn-group .btn {
+        margin-right: 2px;
+        border-radius: var(--border-radius-sm);
+        transition: all 0.2s ease;
+    }
+    
+    .btn-trocar {
+        background-color: var(--purple);
+        color: white;
+    }
+    
+    .btn-trocar:hover {
+        background-color: var(--purple-dark);
+        transform: translateY(-2px);
+    }
+    
+    tr.em-troca {
+        background-color: rgba(var(--purple-rgb), 0.15) !important;
+        transition: background-color 0.3s ease;
+    }
+    
+    /* Estilos para o modal de troca */
+    .modal-content {
+        border-radius: var(--border-radius);
+        overflow: hidden;
+    }
+    
+    .modal-header {
+        background-color: var(--primary);
+    }
+    
+    /* Responsividade para dispositivos móveis */
+    @media (max-width: 767.98px) {
+        .table-responsive {
+            margin-bottom: 0;
+        }
+        
+        /* Ajuste para tabelas em dispositivos móveis */
+        .table-mobile-stack thead {
+            display: none;
+        }
+        
+        .table-mobile-stack tr {
+            display: block;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: var(--box-shadow-sm);
+            border-radius: var(--border-radius-sm);
+            overflow: hidden;
+        }
+        
+        .table-mobile-stack td {
+            display: flex;
+            justify-content: space-between;
+            text-align: right;
+            border-bottom: 1px solid rgba(var(--border-color-rgb), 0.2);
+            padding: 0.75rem 1rem;
+        }
+        
+        .table-mobile-stack td:last-child {
+            border-bottom: none;
+        }
+        
+        .table-mobile-stack td:before {
+            content: attr(data-label);
+            font-weight: 600;
+            text-align: left;
+            padding-right: 1rem;
+        }
+        
+        .table-mobile-stack td.actions-cell {
+            justify-content: center;
+            padding-top: 1rem;
+        }
+        
+        .table-mobile-stack td.actions-cell:before {
+            display: none;
+        }
+        
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+        
+        .btn-group .btn {
+            flex: 1;
+            padding: 0.5rem;
+            margin: 0 0.25rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    {% if agendamentos_por_data %}
+        {% for data, agendamentos in agendamentos_por_data.items() %}
+            <div class="card mb-4 shadow-sm fade-in">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-calendar-day me-2"></i>Agendamentos para {{ data }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover table-mobile-stack">
+                            <thead>
+                                <tr>
+                                    <th>Hora</th>
+                                    <th>Cliente</th>
+                                    <th>Serviço</th>
+                                    <th>Barbeiro</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for agendamento in agendamentos %}
+                                    <tr class="fade-in" style="animation-delay: {{ (loop.index * 0.05)|string }}s">
+                                        <td data-label="Hora">{{ agendamento.hora_inicio.strftime('%H:%M') }} - {{ agendamento.hora_fim.strftime('%H:%M') }}</td>
+                                        <td data-label="Cliente">{{ agendamento.cliente.nome }} {{ agendamento.cliente.sobrenome }}</td>
+                                        <td data-label="Serviço">{{ agendamento.servico.nome }}</td>
+                                        <td data-label="Barbeiro">{{ agendamento.barbeiro.nome }} {{ agendamento.barbeiro.sobrenome }}</td>
+                                        <td data-label="Status">
+                                            {% if agendamento.status == 'agendado' %}
+                                                <span class="badge bg-warning text-dark">Agendado</span>
+                                            {% elif agendamento.status == 'concluído' %}
+                                                <span class="badge bg-success">Concluído</span>
+                                            {% elif agendamento.status == 'cancelado' %}
+                                                <span class="badge bg-danger">Cancelado</span>
+                                            {% endif %}
+                                        </td>
+                                        <td data-label="Ações" class="actions-cell">
+                                            <div class="btn-group" role="group">
+                                                {% if agendamento.status == 'agendado' %}
+                                                    <button type="button" class="btn btn-sm btn-success" title="Confirmar">
+                                                        <i class="fas fa-check"></i>
+                                                        <span class="d-none d-md-inline ms-1">Confirmar</span>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-danger" title="Cancelar">
+                                                        <i class="fas fa-times"></i>
+                                                        <span class="d-none d-md-inline ms-1">Cancelar</span>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-primary" title="Reagendar">
+                                                        <i class="fas fa-calendar-alt"></i>
+                                                        <span class="d-none d-md-inline ms-1">Reagendar</span>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-trocar" data-id="{{ agendamento.id }}" data-cliente="{{ agendamento.cliente.nome }} {{ agendamento.cliente.sobrenome }}" data-horario="{{ agendamento.hora_inicio.strftime('%H:%M') }} - {{ agendamento.hora_fim.strftime('%H:%M') }}" data-data="{{ data }}" title="Trocar">
+                                                        <i class="fas fa-exchange-alt"></i>
+                                                        <span class="d-none d-md-inline ms-1">Trocar</span>
+                                                    </button>
+                                                {% else %}
+                                                    <button type="button" class="btn btn-sm btn-secondary" disabled>
+                                                        <i class="fas fa-lock"></i>
+                                                        <span class="d-none d-md-inline ms-1">Bloqueado</span>
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-info slide-up">
+            <i class="fas fa-info-circle me-2"></i> Não há agendamentos registrados.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Aplicar classes de animação aos elementos da tabela
+        const applyAnimations = () => {
+            // Adicionar animações com atraso para cada linha da tabela
+            document.querySelectorAll('tr.fade-in').forEach((row, index) => {
+                setTimeout(() => {
+                    row.classList.add('animate__animated', 'animate__fadeIn');
+                }, index * 50);
+            });
+            
+            // Adicionar animações para os cards
+            document.querySelectorAll('.card.fade-in').forEach((card, index) => {
+                setTimeout(() => {
+                    card.classList.add('animate__animated', 'animate__fadeIn');
+                }, index * 100);
+            });
+        };
+        
+        // Executar animações após um pequeno atraso para garantir que a página esteja carregada
+        setTimeout(applyAnimations, 100);
+        
+        // Adicionar efeito de hover aos botões
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('mouseenter', function() {
+                if (!this.disabled) {
+                    this.classList.add('animate__animated', 'animate__pulse');
+                }
+            });
+            
+            btn.addEventListener('mouseleave', function() {
+                this.classList.remove('animate__animated', 'animate__pulse');
+            });
+        });
+        
+        // Função para verificar se o dispositivo é móvel
+        const isMobile = () => window.innerWidth < 768;
+        // Variáveis para controlar o modo de troca
+        let modoTrocaAtivo = false;
+        let primeiroAgendamentoId = null;
+        let primeiroAgendamentoCliente = null;
+        let primeiroAgendamentoHorario = null;
+        let primeiroAgendamentoData = null;
+        let primeiroAgendamentoRow = null;
+        
+        // Adicionar evento de clique aos botões de confirmar
+        document.querySelectorAll('.btn-success').forEach(function(botao) {
+            botao.addEventListener('click', function(event) {
+                event.preventDefault();
+                const agendamentoRow = this.closest('tr');
+                const agendamentoId = this.closest('.btn-group').querySelector('.btn-trocar').getAttribute('data-id');
+                const statusCell = agendamentoRow.querySelector('td[data-label="Status"]');
+                const botoesAcao = this.closest('.btn-group');
+                
+                // Desabilitar o botão durante o processamento
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+                
+                // Enviar requisição para confirmar o agendamento
+                fetch(`/agendamento/confirmar/${agendamentoId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro na resposta do servidor: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Atualizar o status na interface
+                        statusCell.innerHTML = '<span class="badge bg-success animate__animated animate__fadeIn">Concluído</span>';
+                        
+                        // Esconder os botões de ação
+                        botoesAcao.innerHTML = '<button type="button" class="btn btn-sm btn-secondary" disabled><i class="fas fa-lock"></i><span class="d-none d-md-inline ms-1">Bloqueado</span></button>';
+                        
+                        // Exibir mensagem de sucesso
+                        Swal.fire({
+                            title: 'Sucesso!',
+                            text: data.message,
+                            icon: 'success',
+                            confirmButtonText: 'OK',
+                            confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(),
+                            customClass: {
+                                popup: 'animate__animated animate__fadeInUp',
+                                confirmButton: 'btn btn-primary'
+                            }
+                        });
+                    } else {
+                        throw new Error(data.message || 'Erro desconhecido');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    
+                    // Reativar o botão
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fas fa-check"></i><span class="d-none d-md-inline ms-1">Confirmar</span>';
+                    
+                    // Exibir mensagem de erro
+                    Swal.fire({
+                        title: 'Erro!',
+                        text: error.message || 'Ocorreu um erro ao confirmar o agendamento.',
+                        icon: 'error',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(),
+                        customClass: {
+                            popup: 'animate__animated animate__shakeX',
+                            confirmButton: 'btn btn-primary'
+                        }
+                    });
+                });
+            });
+        });
+        
+        // Adicionar evento de clique aos botões de cancelar
+        document.querySelectorAll('.btn-danger').forEach(function(botao) {
+            botao.addEventListener('click', function(event) {
+                event.preventDefault();
+                const agendamentoRow = this.closest('tr');
+                const agendamentoId = this.closest('.btn-group').querySelector('.btn-trocar').getAttribute('data-id');
+                const statusCell = agendamentoRow.querySelector('td[data-label="Status"]');
+                const botoesAcao = this.closest('.btn-group');
+                
+                // Confirmar antes de cancelar
+                Swal.fire({
+                    title: 'Confirmar cancelamento',
+                    text: 'Tem certeza que deseja cancelar este agendamento?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sim, cancelar',
+                    cancelButtonText: 'Não',
+                    confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--danger').trim(),
+                    cancelButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--secondary').trim(),
+                    customClass: {
+                        popup: 'animate__animated animate__fadeInUp',
+                        confirmButton: 'btn btn-danger',
+                        cancelButton: 'btn btn-secondary'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Desabilitar o botão durante o processamento
+                        this.disabled = true;
+                        this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+                        
+                        // Enviar requisição para cancelar o agendamento
+                        fetch(`/agendamento/cancelar/${agendamentoId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            }
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Erro na resposta do servidor: ' + response.status);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.status === 'success') {
+                                // Atualizar o status na interface
+                                statusCell.innerHTML = '<span class="badge bg-danger animate__animated animate__fadeIn">Cancelado</span>';
+                                
+                                // Esconder os botões de ação
+                                botoesAcao.innerHTML = '<button type="button" class="btn btn-sm btn-secondary" disabled><i class="fas fa-lock"></i><span class="d-none d-md-inline ms-1">Bloqueado</span></button>';
+                                
+                                // Exibir mensagem de sucesso
+                                Swal.fire({
+                                    title: 'Sucesso!',
+                                    text: data.message,
+                                    icon: 'success',
+                                    confirmButtonText: 'OK',
+                                    confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(),
+                                    customClass: {
+                                        popup: 'animate__animated animate__fadeInUp',
+                                        confirmButton: 'btn btn-primary'
+                                    }
+                                });
+                            } else {
+                                throw new Error(data.message || 'Erro desconhecido');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Erro:', error);
+                            
+                            // Reativar o botão
+                            this.disabled = false;
+                            this.innerHTML = '<i class="fas fa-times"></i><span class="d-none d-md-inline ms-1">Cancelar</span>';
+                            
+                            // Exibir mensagem de erro
+                            Swal.fire({
+                                title: 'Erro!',
+                                text: error.message || 'Ocorreu um erro ao cancelar o agendamento.',
+                                icon: 'error',
+                                confirmButtonText: 'OK',
+                                confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(),
+                                customClass: {
+                                    popup: 'animate__animated animate__shakeX',
+                                    confirmButton: 'btn btn-primary'
+                                }
+                            });
+                        });
+                    }
+                });
+            });
+        });
+
+        // Adicionar listeners aos botões de troca
+        document.querySelectorAll('.btn-trocar').forEach(button => {
+            button.addEventListener('click', function(e) {
+                const agendamentoId = this.getAttribute('data-id');
+                const agendamentoCliente = this.getAttribute('data-cliente');
+                const agendamentoHorario = this.getAttribute('data-horario');
+                const agendamentoData = this.getAttribute('data-data');
+                const row = this.closest('tr');
+                
+                // Se o modo de troca não está ativo, ativar e armazenar o primeiro agendamento
+                if (!modoTrocaAtivo) {
+                    modoTrocaAtivo = true;
+                    primeiroAgendamentoId = agendamentoId;
+                    primeiroAgendamentoCliente = agendamentoCliente;
+                    primeiroAgendamentoHorario = agendamentoHorario;
+                    primeiroAgendamentoData = agendamentoData;
+                    primeiroAgendamentoRow = row;
+                    
+                    // Destacar a linha do primeiro agendamento
+                    row.classList.add('em-troca');
+                    
+                    // Alterar o título do botão para indicar que pode cancelar
+                    this.setAttribute('title', 'Cancelar troca');
+                } 
+                // Se o modo de troca está ativo e o usuário clicou no mesmo agendamento, cancelar
+                else if (primeiroAgendamentoId === agendamentoId) {
+                    modoTrocaAtivo = false;
+                    primeiroAgendamentoRow.classList.remove('em-troca');
+                    this.setAttribute('title', 'Trocar');
+                    
+                    // Resetar variáveis
+                    primeiroAgendamentoId = null;
+                    primeiroAgendamentoCliente = null;
+                    primeiroAgendamentoHorario = null;
+                    primeiroAgendamentoData = null;
+                    primeiroAgendamentoRow = null;
+                } 
+                // Se o modo de troca está ativo e o usuário clicou em outro agendamento, mostrar modal de confirmação
+                else {
+                    // Criar e mostrar o modal de confirmação
+                    mostrarModalConfirmacao({
+                        primeiroId: primeiroAgendamentoId,
+                        primeiroCliente: primeiroAgendamentoCliente,
+                        primeiroHorario: primeiroAgendamentoHorario,
+                        primeiroData: primeiroAgendamentoData,
+                        segundoId: agendamentoId,
+                        segundoCliente: agendamentoCliente,
+                        segundoHorario: agendamentoHorario,
+                        segundoData: agendamentoData
+                    });
+                }
+            });
+        });
+        
+        // Função para mostrar o modal de confirmação
+        function mostrarModalConfirmacao(dados) {
+            // Verificar se já existe um modal e removê-lo
+            const modalExistente = document.getElementById('modalTrocaHorarios');
+            if (modalExistente) {
+                modalExistente.remove();
+            }
+            
+            // Criar o modal
+            const modalHTML = `
+                <div class="modal fade" id="modalTrocaHorarios" tabindex="-1" aria-labelledby="modalTrocaHorariosLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title" id="modalTrocaHorariosLabel"><i class="fas fa-exchange-alt me-2"></i>Confirmar Troca de Horários</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="lead text-center mb-4">Deseja trocar os seguintes horários?</p>
+                                <div class="card mb-3 fade-in">
+                                    <div class="card-header bg-light d-flex align-items-center">
+                                        <i class="fas fa-user me-2"></i> Cliente 1
+                                    </div>
+                                    <div class="card-body">
+                                        <p><i class="fas fa-user-circle me-2"></i><strong>Cliente:</strong> ${dados.primeiroCliente}</p>
+                                        <p><i class="fas fa-calendar me-2"></i><strong>Data:</strong> ${dados.primeiroData}</p>
+                                        <p><i class="fas fa-clock me-2"></i><strong>Horário:</strong> ${dados.primeiroHorario}</p>
+                                    </div>
+                                </div>
+                                <div class="text-center mb-3">
+                                    <i class="fas fa-arrows-alt-v fa-2x text-primary"></i>
+                                </div>
+                                <div class="card fade-in" style="animation-delay: 0.2s">
+                                    <div class="card-header bg-light d-flex align-items-center">
+                                        <i class="fas fa-user me-2"></i> Cliente 2
+                                    </div>
+                                    <div class="card-body">
+                                        <p><i class="fas fa-user-circle me-2"></i><strong>Cliente:</strong> ${dados.segundoCliente}</p>
+                                        <p><i class="fas fa-calendar me-2"></i><strong>Data:</strong> ${dados.segundoData}</p>
+                                        <p><i class="fas fa-clock me-2"></i><strong>Horário:</strong> ${dados.segundoHorario}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="fas fa-times me-1"></i> Cancelar
+                                </button>
+                                <button type="button" class="btn btn-primary" id="btnConfirmarTroca">
+                                    <i class="fas fa-check me-1"></i> Confirmar Troca
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Adicionar o modal ao DOM
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            // Inicializar o modal Bootstrap
+            const modalElement = document.getElementById('modalTrocaHorarios');
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+            
+            // Adicionar evento ao botão de confirmar
+            document.getElementById('btnConfirmarTroca').addEventListener('click', function() {
+                // Desabilitar o botão durante o processamento para evitar cliques múltiplos
+                const btnConfirmar = this;
+                btnConfirmar.disabled = true;
+                btnConfirmar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processando...';
+                
+                // Preparar os dados para enviar ao servidor
+                const dadosParaEnviar = {
+                    agendamento1_id: dados.primeiroId,
+                    agendamento2_id: dados.segundoId
+                };
+                
+                // Enviar requisição para a API
+                fetch('/admin/agendamento/trocar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(dadosParaEnviar)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro na resposta do servidor: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Fechar o modal
+                        modal.hide();
+                        
+                        // Resetar o modo de troca
+                        modoTrocaAtivo = false;
+                        primeiroAgendamentoRow.classList.remove('em-troca');
+                        
+                        // Resetar variáveis
+                        primeiroAgendamentoId = null;
+                        primeiroAgendamentoCliente = null;
+                        primeiroAgendamentoHorario = null;
+                        primeiroAgendamentoData = null;
+                        primeiroAgendamentoRow = null;
+                        
+                        // Exibir mensagem de sucesso
+                        Swal.fire({
+                            title: 'Sucesso!',
+                            text: data.message,
+                            icon: 'success',
+                            confirmButtonText: 'OK',
+                            confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(),
+                            customClass: {
+                                popup: 'animate__animated animate__fadeInUp',
+                                confirmButton: 'btn btn-primary'
+                            }
+                        }).then(() => {
+                            // Recarregar a página para mostrar os horários atualizados
+                            window.location.reload();
+                        });
+                    } else {
+                        throw new Error(data.message || 'Erro desconhecido');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    
+                    // Reativar o botão
+                    btnConfirmar.disabled = false;
+                    btnConfirmar.innerHTML = 'Confirmar Troca';
+                    
+                    // Exibir mensagem de erro
+                    Swal.fire({
+                        title: 'Erro!',
+                        text: error.message || 'Ocorreu um erro ao processar a troca de horários.',
+                        icon: 'error',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(),
+                        customClass: {
+                            popup: 'animate__animated animate__shakeX',
+                            confirmButton: 'btn btn-primary'
+                        }
+                    });
+                });
+            });
+            
+            // Quando o modal for fechado, resetar o modo de troca
+            modalElement.addEventListener('hidden.bs.modal', function() {
+                modoTrocaAtivo = false;
+                if (primeiroAgendamentoRow) {
+                    primeiroAgendamentoRow.classList.remove('em-troca');
+                }
+                
+                // Resetar variáveis
+                primeiroAgendamentoId = null;
+                primeiroAgendamentoCliente = null;
+                primeiroAgendamentoHorario = null;
+                primeiroAgendamentoData = null;
+                primeiroAgendamentoRow = null;
+            });
+        }
+    });
+</script>
+
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.all.min.js"></script>
+{% endblock %}

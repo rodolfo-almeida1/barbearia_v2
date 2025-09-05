@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Administração da Barbearia{% endblock %}</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Animate.css para animações -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <!-- Estilos personalizados -->
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #e67e22;
+            --light-color: #ecf0f1;
+            --dark-color: #1a252f;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --info-color: #3498db;
+            --border-radius: 0.5rem;
+            --box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            --transition-speed: 0.3s;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+            color: var(--dark-color);
+            overflow-x: hidden;
+        }
+        
+        /* Sidebar Styles */
+        .sidebar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            min-height: 100vh;
+            color: white;
+            transition: all var(--transition-speed) ease;
+            box-shadow: var(--box-shadow);
+            z-index: 1030;
+        }
+        
+        .sidebar-brand {
+            padding: 1.5rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 0.75rem 1rem;
+            border-radius: var(--border-radius);
+            margin: 0.5rem 0.75rem;
+            transition: all var(--transition-speed) ease;
+            font-weight: 500;
+        }
+        
+        .sidebar .nav-link:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        
+        .sidebar .nav-link.active {
+            color: white;
+            background-color: var(--accent-color);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 0.75rem;
+            width: 1.25rem;
+            text-align: center;
+            transition: transform var(--transition-speed) ease;
+        }
+        
+        .sidebar .nav-link:hover i {
+            transform: scale(1.2);
+        }
+        
+        /* Mobile Sidebar Toggle */
+        .sidebar-toggle {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1040;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 3rem;
+            height: 3rem;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--box-shadow);
+            transition: all var(--transition-speed) ease;
+        }
+        
+        .sidebar-toggle:hover {
+            background-color: var(--primary-color);
+            transform: scale(1.1);
+        }
+        
+        /* Content Styles */
+        .content-wrapper {
+            padding: 2rem 1.5rem;
+            transition: all var(--transition-speed) ease;
+        }
+        
+        /* Responsive Adjustments */
+        @media (max-width: 767.98px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: -100%;
+                width: 80%;
+                max-width: 300px;
+                z-index: 1040;
+                transition: left var(--transition-speed) ease;
+            }
+            
+            .sidebar.show {
+                left: 0;
+            }
+            
+            .sidebar-toggle {
+                display: flex;
+            }
+            
+            .content-wrapper {
+                padding: 1.5rem 1rem;
+                margin-top: 3rem;
+            }
+        }
+        
+        /* Navbar Brand */
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--accent-color) !important;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Card Styles */
+        .card {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.15);
+        }
+        
+        .card-header {
+            font-weight: 600;
+            border-bottom: none;
+            padding: 1rem 1.25rem;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        /* Button Styles */
+        .btn {
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            padding: 0.5rem 1.25rem;
+            transition: all var(--transition-speed) ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-accent {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            color: white;
+        }
+        
+        .btn-accent:hover {
+            color: white;
+            background-color: #d35400;
+        }
+        
+        /* Table Styles */
+        .table {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        
+        .table-responsive {
+            border-radius: var(--border-radius);
+            overflow-x: auto;
+        }
+        
+        .table th {
+            background-color: rgba(0, 0, 0, 0.03);
+            font-weight: 600;
+            border-top: none;
+        }
+        
+        .table td, .table th {
+            padding: 1rem;
+            vertical-align: middle;
+        }
+        
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+            transform: scale(1.01);
+            transition: all var(--transition-speed) ease;
+        }
+        
+        /* Form Styles */
+        .form-control, .form-select {
+            border-radius: var(--border-radius);
+            padding: 0.75rem 1rem;
+            border: 1px solid #ced4da;
+            transition: all var(--transition-speed) ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 0.25rem rgba(230, 126, 34, 0.25);
+        }
+        
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Badge Styles */
+        .badge {
+            font-weight: 500;
+            padding: 0.5em 0.75em;
+            border-radius: 30px;
+        }
+        
+        /* Alert Styles */
+        .alert {
+            border-radius: var(--border-radius);
+            border: none;
+            box-shadow: var(--box-shadow);
+        }
+        
+        /* Animation Classes */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        .slide-up {
+            animation: slideUp 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+    {% block styles %}{% endblock %}
+</head>
+<body>
+    <!-- Botão de toggle para o menu lateral em dispositivos móveis -->
+    <button class="sidebar-toggle" id="sidebarToggle">
+        <i class="fas fa-bars"></i>
+    </button>
+    
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 d-md-block sidebar" id="sidebar">
+                <div class="position-sticky pt-3">
+                    <div class="sidebar-brand text-center mb-4">
+                        <h4 class="navbar-brand mb-0">Barbearia Admin</h4>
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/admin/dashboard' %}active{% endif %}" href="{{ url_for('admin_dashboard') }}">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/agenda' %}active{% endif %}" href="{{ url_for('agenda') }}">
+                                <i class="fas fa-calendar-alt"></i> Agendamentos
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/admin/servicos' %}active{% endif %}" href="{{ url_for('admin_servicos') }}">
+                                <i class="fas fa-cut"></i> Serviços
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/admin/barbeiros' %}active{% endif %}" href="{{ url_for('admin_barbeiros') }}">
+                                <i class="fas fa-user-tie"></i> Gerir Equipe
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/admin/clientes' or '/admin/cliente/' in request.path %}active{% endif %}" href="{{ url_for('admin_clientes') }}">
+                                <i class="fas fa-users"></i> Gerir Clientes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/admin/horarios' %}active{% endif %}" href="{{ url_for('admin_horarios') }}">
+                                <i class="fas fa-clock"></i> Gerir Horários
+                            </a>
+                        </li>
+                        <li class="nav-item mt-5">
+                            <a class="nav-link text-danger" href="#">
+                                <i class="fas fa-sign-out-alt"></i> Sair
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Conteúdo principal -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 content-wrapper">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom fade-in">
+                    <h1 class="h2">{% block header %}Dashboard{% endblock %}</h1>
+                </div>
+                
+                <!-- Mensagens flash -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show slide-up" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <!-- Conteúdo da página -->
+                <div class="fade-in">
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS Bundle com Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Scripts personalizados -->
+    <script>
+        // Função para inicializar animações e interatividade
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle do menu lateral em dispositivos móveis
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('sidebar');
+            const content = document.querySelector('.content-wrapper');
+            
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('show');
+                });
+                
+                // Fechar o menu ao clicar fora dele
+                document.addEventListener('click', function(event) {
+                    const isClickInsideSidebar = sidebar.contains(event.target);
+                    const isClickOnToggle = sidebarToggle.contains(event.target);
+                    
+                    if (!isClickInsideSidebar && !isClickOnToggle && sidebar.classList.contains('show')) {
+                        sidebar.classList.remove('show');
+                    }
+                });
+            }
+            
+            // Adicionar animações aos elementos da página
+            function addAnimationClasses() {
+                // Adicionar classes de animação aos cards
+                const cards = document.querySelectorAll('.card');
+                cards.forEach((card, index) => {
+                    card.classList.add('slide-up');
+                    card.style.animationDelay = `${index * 0.1}s`;
+                });
+                
+                // Adicionar classes de animação às tabelas
+                const tables = document.querySelectorAll('.table-responsive');
+                tables.forEach(table => {
+                    table.classList.add('fade-in');
+                });
+                
+                // Adicionar classes de animação aos formulários
+                const forms = document.querySelectorAll('form');
+                forms.forEach(form => {
+                    form.classList.add('fade-in');
+                });
+            }
+            
+            // Executar animações após um pequeno delay para garantir que o DOM esteja pronto
+            setTimeout(addAnimationClasses, 100);
+        });
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>
