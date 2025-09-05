@@ -5,41 +5,80 @@
 {% block header %}Editar Horário de Funcionamento{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="card-title mb-0">Editar Horário para {{ dia.nome }}</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <form action="{{ url_for('admin_horarios_editar', id=dia.id) }}" method="POST" id="form-abertura">
-                            <div class="mb-3">
-                                <label for="hora_abertura" class="form-label">Hora de Abertura</label>
-                                <input type="time" class="form-control" id="hora_abertura" name="hora_abertura" value="{{ dia.hora_abertura.strftime('%H:%M') }}" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Salvar Hora de Abertura</button>
-                        </form>
+<section class="horario-edicao mb-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <header class="card-header bg-primary text-white">
+                    <h2 class="card-title h5 mb-0">Editar Horário para {{ dia.nome }}</h2>
+                </header>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <form action="{{ url_for('admin_horarios_editar', id=dia.id) }}" method="POST" id="form-abertura" aria-labelledby="abertura-titulo">
+                                <h3 id="abertura-titulo" class="h6 mb-3">Definir Hora de Abertura</h3>
+                                <div class="mb-3">
+                                    <label for="hora_abertura" class="form-label">Hora de Abertura</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-clock" aria-hidden="true"></i></span>
+                                        <input type="time" class="form-control" id="hora_abertura" name="hora_abertura" value="{{ dia.hora_abertura.strftime('%H:%M') }}" required aria-describedby="abertura-help">
+                                    </div>
+                                    <small id="abertura-help" class="form-text text-muted">Formato: 24 horas (00:00 - 23:59)</small>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1" aria-hidden="true"></i> Salvar Hora de Abertura
+                                </button>
+                            </form>
+                        </div>
+                        <div class="col-md-6">
+                            <form action="{{ url_for('admin_horarios_editar', id=dia.id) }}" method="POST" id="form-fechamento" aria-labelledby="fechamento-titulo">
+                                <h3 id="fechamento-titulo" class="h6 mb-3">Definir Hora de Fecho</h3>
+                                <div class="mb-3">
+                                    <label for="hora_fechamento" class="form-label">Hora de Fecho</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-clock" aria-hidden="true"></i></span>
+                                        <input type="time" class="form-control" id="hora_fechamento" name="hora_fechamento" value="{{ dia.hora_fechamento.strftime('%H:%M') }}" required aria-describedby="fechamento-help">
+                                    </div>
+                                    <small id="fechamento-help" class="form-text text-muted">Formato: 24 horas (00:00 - 23:59)</small>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1" aria-hidden="true"></i> Salvar Hora de Fecho
+                                </button>
+                            </form>
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <form action="{{ url_for('admin_horarios_editar', id=dia.id) }}" method="POST" id="form-fechamento">
-                            <div class="mb-3">
-                                <label for="hora_fechamento" class="form-label">Hora de Fecho</label>
-                                <input type="time" class="form-control" id="hora_fechamento" name="hora_fechamento" value="{{ dia.hora_fechamento.strftime('%H:%M') }}" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Salvar Hora de Fecho</button>
-                        </form>
+                    <div class="mt-4">
+                        <a href="{{ url_for('admin_horarios') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1" aria-hidden="true"></i> Voltar
+                        </a>
                     </div>
-                </div>
-                <div class="mt-4">
-                    <a href="{{ url_for('admin_horarios') }}" class="btn btn-secondary">Voltar</a>
                 </div>
             </div>
         </div>
     </div>
-</div>
+</section>
 
+<section class="horario-info mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm border-info">
+                <div class="card-header bg-info text-white">
+                    <h2 class="card-title h5 mb-0"><i class="fas fa-info-circle me-2" aria-hidden="true"></i>Informações</h2>
+                </div>
+                <div class="card-body">
+                    <p>Defina os horários de funcionamento para <strong>{{ dia.nome }}</strong>:</p>
+                    <ul>
+                        <li>Os horários são exibidos no formato 24 horas (00:00 - 23:59).</li>
+                        <li>A hora de fecho deve ser posterior à hora de abertura.</li>
+                        <li>Para marcar o dia como fechado, volte à página anterior e clique no botão "Fechar".</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Validação para garantir que a hora de fechamento seja depois da hora de abertura
@@ -49,9 +88,43 @@
             
             if (fechamento <= abertura) {
                 event.preventDefault();
-                alert('A hora de fecho deve ser posterior à hora de abertura.');
+                // Usar SweetAlert2 se disponível, caso contrário usar alert padrão
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Erro de validação',
+                        text: 'A hora de fecho deve ser posterior à hora de abertura.',
+                        icon: 'error',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#2c3e50'
+                    });
+                } else {
+                    alert('A hora de fecho deve ser posterior à hora de abertura.');
+                }
+            }
+        });
+        
+        // Adicionar validação também para o formulário de abertura
+        document.getElementById('form-abertura').addEventListener('submit', function(event) {
+            const abertura = document.getElementById('hora_abertura').value;
+            const fechamento = document.getElementById('hora_fechamento').value;
+            
+            if (fechamento <= abertura && fechamento !== '') {
+                event.preventDefault();
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Erro de validação',
+                        text: 'A hora de abertura deve ser anterior à hora de fecho.',
+                        icon: 'error',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#2c3e50'
+                    });
+                } else {
+                    alert('A hora de abertura deve ser anterior à hora de fecho.');
+                }
             }
         });
     });
 </script>
+{% endblock %}
+
 {% endblock %}
