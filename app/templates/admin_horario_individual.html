@@ -1,0 +1,119 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Horários do Barbeiro - Administração da Barbearia{% endblock %}
+
+{% block header %}Horários de {{ barbeiro.nome }} {{ barbeiro.sobrenome }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Horários Semanais</h5>
+                <a href="{{ url_for('admin_horarios_equipe') }}" class="btn btn-sm btn-light">
+                    <i class="fas fa-arrow-left"></i> Voltar para Lista
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Dia da Semana</th>
+                                <th>Hora de Abertura</th>
+                                <th>Hora de Fecho</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for horario in horarios %}
+                            <tr>
+                                <td>
+                                    {% set dias = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'] %}
+                                    {{ dias[horario.dia_semana] }}
+                                </td>
+                                <td>
+                                    <form action="{{ url_for('admin_horarios_editar_barbeiro', barbeiro_id=barbeiro.id) }}" method="POST" class="row g-2">
+                                        <input type="hidden" name="dia_semana" value="{{ horario.dia_semana }}">
+                                        <input type="hidden" name="acao" value="hora_inicio">
+                                        <div class="col-auto">
+                                            <input type="time" class="form-control form-control-sm" name="hora_inicio" value="{{ horario.hora_inicio.strftime('%H:%M') }}" required>
+                                        </div>
+                                        <div class="col-auto">
+                                            <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-save"></i></button>
+                                        </div>
+                                    </form>
+                                </td>
+                                <td>
+                                    <form action="{{ url_for('admin_horarios_editar_barbeiro', barbeiro_id=barbeiro.id) }}" method="POST" class="row g-2">
+                                        <input type="hidden" name="dia_semana" value="{{ horario.dia_semana }}">
+                                        <input type="hidden" name="acao" value="hora_fim">
+                                        <div class="col-auto">
+                                            <input type="time" class="form-control form-control-sm" name="hora_fim" value="{{ horario.hora_fim.strftime('%H:%M') }}" required>
+                                        </div>
+                                        <div class="col-auto">
+                                            <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-save"></i></button>
+                                        </div>
+                                    </form>
+                                </td>
+                                <td>
+                                    {% set hora_inicio_zero = horario.hora_inicio.strftime('%H:%M') == '00:00' %}
+                                    {% set hora_fim_zero = horario.hora_fim.strftime('%H:%M') == '00:00' %}
+                                    {% set fechado = hora_inicio_zero and hora_fim_zero %}
+                                    
+                                    {% if not fechado %}
+                                    <span class="badge bg-success">Aberto</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Fechado</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form action="{{ url_for('admin_horarios_editar_barbeiro', barbeiro_id=barbeiro.id) }}" method="POST">
+                                        <input type="hidden" name="dia_semana" value="{{ horario.dia_semana }}">
+                                        <input type="hidden" name="acao" value="alternar_status">
+                                        
+                                        {% set hora_inicio_zero = horario.hora_inicio.strftime('%H:%M') == '00:00' %}
+                                        {% set hora_fim_zero = horario.hora_fim.strftime('%H:%M') == '00:00' %}
+                                        {% set fechado = hora_inicio_zero and hora_fim_zero %}
+                                        
+                                        {% if not fechado %}
+                                        <button type="submit" class="btn btn-sm btn-danger">
+                                            <i class="fas fa-times-circle"></i> Fechar
+                                        </button>
+                                        {% else %}
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <i class="fas fa-check-circle"></i> Abrir
+                                        </button>
+                                        {% endif %}
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">Informações</h5>
+            </div>
+            <div class="card-body">
+                <p>Nesta página você pode gerenciar os horários individuais do barbeiro <strong>{{ barbeiro.nome }} {{ barbeiro.sobrenome }}</strong> para cada dia da semana.</p>
+                <ul>
+                    <li>Para alterar o horário de abertura ou fecho, insira o novo horário e clique no botão de salvar.</li>
+                    <li>Para fechar o atendimento em um determinado dia, clique no botão "Fechar".</li>
+                    <li>Para reabrir o atendimento em um dia fechado, clique no botão "Abrir".</li>
+                </ul>
+                <p class="text-muted"><i class="fas fa-info-circle"></i> Os horários são exibidos no formato 24 horas (00:00 - 23:59).</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

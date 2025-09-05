@@ -1,0 +1,139 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Configurações Gerais - Administração da Barbearia{% endblock %}
+
+{% block header %}Configurações Gerais da Aplicação{% endblock %}
+
+{% block styles %}
+<style>
+    /* Estilos específicos para a página de configurações */
+    .card {
+        border-radius: var(--border-radius);
+        transition: all 0.3s ease;
+        box-shadow: var(--box-shadow);
+    }
+    
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--box-shadow-hover);
+    }
+    
+    .card-header {
+        border-top-left-radius: var(--border-radius);
+        border-top-right-radius: var(--border-radius);
+        display: flex;
+        align-items: center;
+    }
+    
+    .card-header h5 {
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .card-header h5 i {
+        margin-right: 0.5rem;
+    }
+    
+    .color-preview {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-left: 10px;
+        border: 1px solid #ddd;
+    }
+    
+    /* Responsividade para dispositivos móveis */
+    @media (max-width: 767.98px) {
+        .btn-actions {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .btn-actions .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card fade-in">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0"><i class="fas fa-cogs me-2"></i>Configurações Gerais</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('admin_config_gerais') }}" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="nome_barbearia" class="form-label"><i class="fas fa-store me-1"></i> Nome da Barbearia</label>
+                        <input type="text" class="form-control" id="nome_barbearia" name="nome_barbearia" value="{{ config.nome_barbearia }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="logo" class="form-label"><i class="fas fa-image me-1"></i> Logótipo</label>
+                        <div class="d-flex align-items-center mb-2">
+                            {% if config.logo_url %}
+                            <img src="{{ config.logo_url }}" alt="Logo atual" class="me-3" style="max-height: 50px;">
+                            <span class="text-muted">Logo atual</span>
+                            {% else %}
+                            <span class="text-muted">Nenhum logo definido</span>
+                            {% endif %}
+                        </div>
+                        <input type="file" class="form-control" id="logo" name="logo" accept="image/*">
+                        <small class="text-muted">Deixe em branco para manter o logo atual</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="cor_primaria" class="form-label"><i class="fas fa-palette me-1"></i> Cor Primária</label>
+                        <div class="d-flex align-items-center">
+                            <input type="color" class="form-control form-control-color" id="cor_primaria" name="cor_primaria" value="{{ config.cor_primaria }}" title="Escolha a cor primária">
+                            <div class="color-preview ms-2" style="background-color: {{ config.cor_primaria }}"></div>
+                        </div>
+                    </div>
+                    
+                    <h5 class="mt-4 mb-3"><i class="fas fa-address-card me-2"></i>Informações de Contato</h5>
+                    
+                    <div class="mb-3">
+                        <label for="telefone" class="form-label"><i class="fas fa-phone me-1"></i> Telefone Principal</label>
+                        <input type="text" class="form-control" id="telefone" name="telefone" value="{{ config.telefone }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="endereco" class="form-label"><i class="fas fa-map-marker-alt me-1"></i> Endereço</label>
+                        <textarea class="form-control" id="endereco" name="endereco" rows="2">{{ config.endereco }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="link_instagram" class="form-label"><i class="fab fa-instagram me-1"></i> Link do Instagram</label>
+                        <input type="url" class="form-control" id="link_instagram" name="link_instagram" value="{{ config.link_instagram }}" placeholder="https://instagram.com/sua_barbearia">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="link_facebook" class="form-label"><i class="fab fa-facebook me-1"></i> Link do Facebook</label>
+                        <input type="url" class="form-control" id="link_facebook" name="link_facebook" value="{{ config.link_facebook }}" placeholder="https://facebook.com/sua_barbearia">
+                    </div>
+                    
+                    <div class="d-flex justify-content-between btn-actions">
+                        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Voltar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Salvar Alterações
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Atualizar a visualização da cor quando o valor mudar
+    document.getElementById('cor_primaria').addEventListener('input', function() {
+        document.querySelector('.color-preview').style.backgroundColor = this.value;
+    });
+</script>
+{% endblock %}

@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from datetime import datetime, time
 from werkzeug.security import check_password_hash
+from werkzeug.utils import secure_filename
 from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user
 import os
 
@@ -18,6 +19,11 @@ app.config['PERMANENT_SESSION_LIFETIME'] = 1800  # 30 minutos
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, '..', 'barbearia.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Configuração da pasta de uploads
+app.config['UPLOAD_FOLDER'] = os.path.join(basedir, 'static', 'uploads')
+# Criar a pasta de uploads se não existir
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Inicialização do SQLAlchemy
 db = SQLAlchemy(app)
@@ -155,6 +161,28 @@ class Agendamento(db.Model):
         return f'<Agendamento {self.id} - {self.data} {self.hora_inicio}>'
 
 
+class Configuracao(db.Model):
+    __tablename__ = 'configuracoes'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    nome_barbearia = db.Column(db.String(100), default="Barbearia App", nullable=False)
+    logo_url = db.Column(db.String(255), nullable=True)
+    cor_primaria = db.Column(db.String(7), default="#3498db", nullable=False)
+    cor_secundaria = db.Column(db.String(7), default="#2c3e50", nullable=True)
+    favicon_url = db.Column(db.String(255), nullable=True)
+    telefone = db.Column(db.String(20), nullable=True)
+    endereco = db.Column(db.Text, nullable=True)
+    link_instagram = db.Column(db.String(255), nullable=True)
+    link_facebook = db.Column(db.String(255), nullable=True)
+    # Tempo mínimo em horas que um cliente precisa dar de antecedência para agendar
+    antecedencia_minima_horas = db.Column(db.Integer, default=2, nullable=True)
+    # Número máximo de dias no futuro que um cliente pode fazer um agendamento
+    janela_maxima_dias = db.Column(db.Integer, default=30, nullable=True)
+    
+    def __repr__(self):
+        return f'<Configuracao {self.id} - {self.nome_barbearia}>'
+
+
 # Rota principal - Página de agendamento
 @app.route('/')
 def index():
@@ -164,7 +192,10 @@ def index():
     # Buscar todos os barbeiros ativos
     barbeiros = Barbeiro.query.filter_by(ativo=True).all()
     
-    return render_template('index.html', servicos=servicos, barbeiros=barbeiros)
+    # Buscar configurações
+    config = Configuracao.query.first()
+    
+    return render_template('index.html', servicos=servicos, barbeiros=barbeiros, config=config)
 
 
 # Rota de logout
@@ -456,6 +487,156 @@ def admin_servicos_apagar(id):
 
 
 # Rotas para gerenciar barbeiros
+# Redirecionar a rota antiga para a nova
+@app.route('/admin/configuracoes')
+def admin_configuracoes():
+    return redirect(url_for('admin_config_gerais'))
+
+@app.route('/admin/configuracoes/gerais', methods=['GET', 'POST'])
+def admin_config_gerais():
+    # Verificar se o usuário está logado
+    if 'admin_id' not in session:
+        flash('Por favor, faça login para acessar esta página.', 'warning')
+        return redirect(url_for('login'))
+    
+    # Buscar a configuração atual
+    config = Configuracao.query.first()
+    
+    if request.method == 'POST':
+        # Obter dados do formulário
+        nome_barbearia = request.form.get('nome_barbearia')
+        cor_primaria = request.form.get('cor_primaria')
+        
+        # Verificar se foi enviado um novo logo
+        logo_file = request.files.get('logo')
+        logo_url = config.logo_url  # Manter o logo atual por padrão
+        
+        if logo_file and logo_file.filename:
+            # Processar o upload do logo
+            try:
+                # Garantir que o nome do arquivo seja seguro
+                filename = secure_filename(logo_file.filename)
+                # Criar um nome único para o arquivo
+                unique_filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
+                # Definir o caminho para salvar o arquivo
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+                # Salvar o arquivo
+                logo_file.save(filepath)
+                # Atualizar a URL do logo
+                logo_url = f"/static/uploads/{unique_filename}"
+            except Exception as e:
+                flash(f'Erro ao fazer upload do logo: {str(e)}', 'danger')
+        
+        try:
+            # Atualizar configuração
+            config.nome_barbearia = nome_barbearia
+            config.cor_primaria = cor_primaria
+            if logo_url:
+                config.logo_url = logo_url
+            
+            # Atualizar informações de contato
+            config.telefone = request.form.get('telefone')
+            config.endereco = request.form.get('endereco')
+            config.link_instagram = request.form.get('link_instagram')
+            config.link_facebook = request.form.get('link_facebook')
+            
+            # Salvar alterações
+            db.session.commit()
+            
+            flash('Configurações atualizadas com sucesso!', 'success')
+            return redirect(url_for('admin_config_gerais'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao atualizar configurações: {str(e)}', 'danger')
+    
+    return render_template('admin_config_gerais.html', config=config)
+
+@app.route('/admin/configuracoes/visual', methods=['GET', 'POST'])
+def admin_config_visual():
+    # Verificar se o usuário está logado
+    if 'admin_id' not in session:
+        flash('Por favor, faça login para acessar esta página.', 'warning')
+        return redirect(url_for('login'))
+    
+    # Buscar a configuração atual
+    config = Configuracao.query.first()
+    
+    if request.method == 'POST':
+        try:
+            # Obter dados do formulário
+            cor_secundaria = request.form.get('cor_secundaria')
+            
+            # Atualizar configuração
+            config.cor_secundaria = cor_secundaria
+            
+            # Processar o upload do favicon
+            favicon_file = request.files.get('favicon')
+            if favicon_file and favicon_file.filename:
+                # Verificar se o arquivo é uma imagem válida
+                if favicon_file.filename.split('.')[-1].lower() in ['ico', 'png', 'jpg', 'jpeg']:
+                    # Gerar um nome de arquivo único
+                    filename = secure_filename(favicon_file.filename)
+                    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+                    favicon_filename = f"favicon_{timestamp}_{filename}"
+                    
+                    # Salvar o arquivo
+                    favicon_path = os.path.join('uploads', 'favicon', favicon_filename)
+                    full_path = os.path.join(app.static_folder, 'uploads', 'favicon')
+                    
+                    # Criar o diretório se não existir
+                    os.makedirs(full_path, exist_ok=True)
+                    
+                    # Salvar o arquivo
+                    favicon_file.save(os.path.join(app.static_folder, favicon_path))
+                    
+                    # Atualizar o caminho no banco de dados
+                    config.favicon_url = favicon_path
+                else:
+                    flash('Formato de arquivo inválido para o favicon. Use .ico, .png, .jpg ou .jpeg.', 'warning')
+            
+            # Salvar alterações
+            db.session.commit()
+            
+            flash('Configurações visuais atualizadas com sucesso!', 'success')
+            return redirect(url_for('admin_config_visual'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao atualizar configurações visuais: {str(e)}', 'danger')
+    
+    return render_template('admin_config_visual.html', config=config)
+
+@app.route('/admin/configuracoes/avancadas', methods=['GET', 'POST'])
+def admin_config_avancadas():
+    # Verificar se o usuário está logado
+    if 'admin_id' not in session:
+        flash('Por favor, faça login para acessar esta página.', 'warning')
+        return redirect(url_for('login'))
+    
+    # Buscar a configuração atual
+    config = Configuracao.query.first()
+    
+    if request.method == 'POST':
+        try:
+            # Obter dados do formulário
+            antecedencia_minima_horas = request.form.get('antecedencia_minima_horas', type=int)
+            janela_maxima_dias = request.form.get('janela_maxima_dias', type=int)
+            
+            # Atualizar configuração
+            config.antecedencia_minima_horas = antecedencia_minima_horas
+            config.janela_maxima_dias = janela_maxima_dias
+            
+            # Salvar alterações
+            db.session.commit()
+            
+            flash('Regras de agendamento atualizadas com sucesso!', 'success')
+            return redirect(url_for('admin_config_avancadas'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao atualizar regras de agendamento: {str(e)}', 'danger')
+    
+    return render_template('admin_config_avancadas.html', config=config)
+
+
 @app.route('/admin/barbeiros')
 def admin_barbeiros():
     # Verificar se o usuário está logado
@@ -707,6 +888,115 @@ def admin_horarios_alternar_status(id):
     return redirect(url_for('admin_horarios'))
 
 
+# Rotas para gerenciar horários individuais dos barbeiros
+@app.route('/admin/horarios_equipe')
+def admin_horarios_equipe():
+    # Verificar se o usuário está logado
+    if 'admin_id' not in session:
+        flash('Por favor, faça login para acessar esta página.', 'warning')
+        return redirect(url_for('login'))
+    
+    # Buscar todos os barbeiros
+    barbeiros = Barbeiro.query.order_by(Barbeiro.nome).all()
+    
+    return render_template('admin_barbeiros_horarios.html', barbeiros=barbeiros)
+
+
+@app.route('/admin/horarios/editar_barbeiro/<int:barbeiro_id>', methods=['GET', 'POST'])
+def admin_horarios_editar_barbeiro(barbeiro_id):
+    # Verificar se o usuário está logado
+    if 'admin_id' not in session:
+        flash('Por favor, faça login para acessar esta página.', 'warning')
+        return redirect(url_for('login'))
+    
+    # Buscar o barbeiro pelo ID
+    barbeiro = Barbeiro.query.get_or_404(barbeiro_id)
+    
+    # Buscar os horários do barbeiro para cada dia da semana
+    horarios = HorarioFuncionamento.query.filter_by(barbeiro_id=barbeiro_id).order_by(HorarioFuncionamento.dia_semana).all()
+    
+    # Se não existirem horários cadastrados para este barbeiro, criar os 7 dias da semana
+    if not horarios or len(horarios) < 7:
+        # Verificar quais dias já existem
+        dias_existentes = [h.dia_semana for h in horarios]
+        
+        # Criar os dias que faltam
+        for dia in range(7):
+            if dia not in dias_existentes:
+                # Horário padrão: 9h às 18h para dias de semana, 9h às 13h para sábado, fechado para domingo
+                if dia < 5:  # Segunda a Sexta
+                    hora_inicio = datetime.strptime('09:00', '%H:%M').time()
+                    hora_fim = datetime.strptime('18:00', '%H:%M').time()
+                elif dia == 5:  # Sábado
+                    hora_inicio = datetime.strptime('09:00', '%H:%M').time()
+                    hora_fim = datetime.strptime('13:00', '%H:%M').time()
+                else:  # Domingo
+                    hora_inicio = datetime.strptime('00:00', '%H:%M').time()
+                    hora_fim = datetime.strptime('00:00', '%H:%M').time()
+                
+                horario = HorarioFuncionamento(barbeiro_id=barbeiro_id, dia_semana=dia, hora_inicio=hora_inicio, hora_fim=hora_fim)
+                db.session.add(horario)
+        
+        db.session.commit()
+        horarios = HorarioFuncionamento.query.filter_by(barbeiro_id=barbeiro_id).order_by(HorarioFuncionamento.dia_semana).all()
+    
+    # Se for POST, processar a atualização de horário
+    if request.method == 'POST':
+        dia_semana = int(request.form.get('dia_semana'))
+        acao = request.form.get('acao')
+        
+        # Buscar o horário específico para o dia da semana
+        horario = HorarioFuncionamento.query.filter_by(barbeiro_id=barbeiro_id, dia_semana=dia_semana).first()
+        
+        if not horario:
+            flash('Horário não encontrado.', 'danger')
+            return redirect(url_for('admin_horarios_editar_barbeiro', barbeiro_id=barbeiro_id))
+        
+        try:
+            if acao == 'hora_inicio':
+                # Atualizar hora de início
+                hora_inicio = request.form.get('hora_inicio')
+                horario.hora_inicio = datetime.strptime(hora_inicio, '%H:%M').time()
+                flash(f'Hora de abertura atualizada com sucesso!', 'success')
+            
+            elif acao == 'hora_fim':
+                # Atualizar hora de fim
+                hora_fim = request.form.get('hora_fim')
+                horario.hora_fim = datetime.strptime(hora_fim, '%H:%M').time()
+                flash(f'Hora de fechamento atualizada com sucesso!', 'success')
+            
+            elif acao == 'alternar_status':
+                # Verificar se está fechado (00:00 - 00:00)
+                hora_inicio_zero = horario.hora_inicio.strftime('%H:%M') == '00:00'
+                hora_fim_zero = horario.hora_fim.strftime('%H:%M') == '00:00'
+                fechado = hora_inicio_zero and hora_fim_zero
+                
+                if fechado:
+                    # Se estiver fechado, abrir com horário padrão
+                    if horario.dia_semana < 5:  # Segunda a Sexta
+                        horario.hora_inicio = datetime.strptime('09:00', '%H:%M').time()
+                        horario.hora_fim = datetime.strptime('18:00', '%H:%M').time()
+                    elif horario.dia_semana == 5:  # Sábado
+                        horario.hora_inicio = datetime.strptime('09:00', '%H:%M').time()
+                        horario.hora_fim = datetime.strptime('13:00', '%H:%M').time()
+                    
+                    flash('Dia aberto com horário padrão.', 'success')
+                else:
+                    # Se estiver aberto, fechar (00:00 - 00:00)
+                    horario.hora_inicio = datetime.strptime('00:00', '%H:%M').time()
+                    horario.hora_fim = datetime.strptime('00:00', '%H:%M').time()
+                    flash('Dia fechado com sucesso.', 'success')
+            
+            db.session.commit()
+        except ValueError:
+            flash('Formato de horário inválido. Use o formato HH:MM.', 'danger')
+        
+        return redirect(url_for('admin_horarios_editar_barbeiro', barbeiro_id=barbeiro_id))
+    
+    # Renderizar o template com os horários do barbeiro
+    return render_template('admin_horario_individual.html', barbeiro=barbeiro, horarios=horarios)
+
+
 @app.route('/admin/cliente/<int:id>')
 def admin_cliente_detalhe(id):
     # Verificar se o usuário está logado
@@ -945,19 +1235,23 @@ def api_horarios_disponiveis():
             dia_semana=dia_semana
         ).first()
         
-        # Se não houver horário definido para este dia, verificar o horário geral da barbearia
+        # Verificar se existe um horário definido para este barbeiro neste dia
         if not horario_funcionamento:
-            dia = DiaSemana.query.filter_by(id=dia_semana+1).first()
-            if not dia or not dia.ativo:
-                return jsonify({
-                    'status': 'error',
-                    'message': f'A barbearia não funciona neste dia.'
-                }), 400
-            hora_inicio = dia.hora_abertura
-            hora_fim = dia.hora_fechamento
-        else:
-            hora_inicio = horario_funcionamento.hora_inicio
-            hora_fim = horario_funcionamento.hora_fim
+            return jsonify({
+                'status': 'error',
+                'message': f'O barbeiro não tem horário definido para este dia.'
+            }), 400
+            
+        # Verificar se o barbeiro trabalha neste dia (horário não é 00:00-00:00)
+        hora_inicio = horario_funcionamento.hora_inicio
+        hora_fim = horario_funcionamento.hora_fim
+        
+        # Se o horário for 00:00-00:00, significa que o barbeiro não trabalha neste dia
+        if hora_inicio.strftime('%H:%M') == '00:00' and hora_fim.strftime('%H:%M') == '00:00':
+            return jsonify({
+                'status': 'error',
+                'message': f'O barbeiro não trabalha neste dia.'
+            }), 400
         
         # Buscar todos os agendamentos do barbeiro para esta data
         agendamentos = Agendamento.query.filter_by(

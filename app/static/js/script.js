@@ -4,11 +4,26 @@ let barbeiroSelecionado = null;
 let dataSelecionada = null;
 let horarioSelecionado = null;
 
-// Configurar a data mínima como hoje
-const hoje = new Date().toISOString().split('T')[0];
+// Configurar as datas mínima e máxima com base nas regras de negócio
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('data').setAttribute('min', hoje);
-    document.getElementById('data').value = hoje;
+    // Calcular a data mínima (hoje + antecedência mínima em horas)
+    const hoje = new Date();
+    const dataMinima = new Date(hoje);
+    dataMinima.setHours(hoje.getHours() + parseInt(configAgendamento.antecedenciaMinima, 10));
+    
+    // Calcular a data máxima (hoje + janela máxima em dias)
+    const dataMaxima = new Date(hoje);
+    dataMaxima.setDate(hoje.getDate() + parseInt(configAgendamento.janelaMaxima, 10));
+    
+    // Formatar as datas para o formato YYYY-MM-DD
+    const dataMinimaFormatada = dataMinima.toISOString().split('T')[0];
+    const dataMaximaFormatada = dataMaxima.toISOString().split('T')[0];
+    
+    // Aplicar as restrições ao campo de data
+    const campoData = document.getElementById('data');
+    campoData.setAttribute('min', dataMinimaFormatada);
+    campoData.setAttribute('max', dataMaximaFormatada);
+    campoData.value = dataMinimaFormatada;
     
     // Inicializar os event listeners
     inicializarEventListeners();

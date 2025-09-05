@@ -1,0 +1,100 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Configurações Visuais - Administração da Barbearia{% endblock %}
+
+{% block header %}Configurações Visuais da Aplicação{% endblock %}
+
+{% block styles %}
+<style>
+    /* Estilos específicos para a página de configurações visuais */
+    .card {
+        border-radius: var(--border-radius);
+        transition: all 0.3s ease;
+        box-shadow: var(--box-shadow);
+    }
+    
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--box-shadow-hover);
+    }
+    
+    .card-header {
+        border-top-left-radius: var(--border-radius);
+        border-top-right-radius: var(--border-radius);
+        display: flex;
+        align-items: center;
+    }
+    
+    .card-header h5 {
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .card-header h5 i {
+        margin-right: 0.5rem;
+    }
+    
+    /* Responsividade para dispositivos móveis */
+    @media (max-width: 767.98px) {
+        .btn-actions {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .btn-actions .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card fade-in">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0"><i class="fas fa-palette me-2"></i>Configurações Visuais</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('admin_config_visual') }}" method="POST" enctype="multipart/form-data">
+                    <h5 class="mb-3"><i class="fas fa-palette me-2"></i>Personalização Visual</h5>
+                    
+                    <div class="mb-3">
+                        <label for="cor_secundaria" class="form-label"><i class="fas fa-fill-drip me-1"></i> Cor Secundária</label>
+                        <input type="color" class="form-control form-control-color" id="cor_secundaria" name="cor_secundaria" value="{{ config.cor_secundaria or '#2c3e50' }}">
+                        <small class="form-text text-muted">Escolha a cor secundária para complementar o tema da barbearia.</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="favicon" class="form-label"><i class="fas fa-image me-1"></i> Ícone do Navegador (Favicon)</label>
+                        <input type="file" class="form-control" id="favicon" name="favicon" accept="image/x-icon,image/png,image/jpeg">
+                        <small class="form-text text-muted">Faça upload de uma imagem para ser usada como ícone do navegador (recomendado: 32x32 pixels).</small>
+                        {% if config.favicon_url %}
+                        <div class="mt-2">
+                            <p class="mb-1">Favicon atual:</p>
+                            <img src="{{ url_for('static', filename=config.favicon_url) }}" alt="Favicon atual" style="max-width: 32px; max-height: 32px;">
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Salvar Alterações
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="d-flex justify-content-between btn-actions mt-4">
+                    <a href="{{ url_for('admin_config_gerais') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Voltar para Configurações Gerais
+                    </a>
+                    <a href="{{ url_for('admin_config_avancadas') }}" class="btn btn-secondary">
+                        <i class="fas fa-tools me-2"></i>Ir para Configurações Avançadas
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

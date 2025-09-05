@@ -177,6 +177,13 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <!-- Custom JS -->
+    <script>
+        // Passar as configurações do Flask para o JavaScript
+        const configAgendamento = {
+            antecedenciaMinima: '{{ config.antecedencia_minima_horas|default(2, true) }}',
+            janelaMaxima: '{{ config.janela_maxima_dias|default(30, true) }}'
+        };
+    </script>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

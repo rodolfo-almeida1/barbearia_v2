@@ -13,6 +13,7 @@ from app.scripts.adicionar_servicos import adicionar_servicos
 from app.scripts.adicionar_barbeiros import adicionar_barbeiros
 from app.scripts.adicionar_clientes import adicionar_clientes
 from app.scripts.adicionar_horarios import adicionar_horarios
+from app.scripts.adicionar_configuracao import adicionar_configuracao
 
 
 def executar_comando(comando, mensagem):
@@ -80,6 +81,11 @@ def fase_populacao():
     print("\n5. População de Horários de Funcionamento")
     print("-" * 50)
     adicionar_horarios()
+    
+    # Adiciona configuração inicial
+    print("\n6. População de Configuração Inicial")
+    print("-" * 50)
+    adicionar_configuracao()
     
     print("\nFase de população concluída com sucesso!")
     return True
