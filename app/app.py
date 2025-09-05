@@ -331,8 +331,32 @@ def agenda():
         flash('Por favor, faça login para acessar esta página.', 'warning')
         return redirect(url_for('login'))
     
-    # Buscar todos os agendamentos do banco de dados
-    agendamentos = Agendamento.query.all()
+    # Obter parâmetros de filtro
+    nome_cliente = request.args.get('nome_cliente', '')
+    
+    # Iniciar a consulta base
+    query = Agendamento.query
+    
+    # Aplicar filtro de nome de cliente se fornecido
+    if nome_cliente:
+        # Dividir o termo de busca em palavras individuais
+        palavras = nome_cliente.split()
+        
+        # Iniciar a consulta com join ao Cliente
+        query = query.join(Cliente)
+        
+        # Adicionar uma condição para cada palavra do termo de busca
+        for palavra in palavras:
+            # Cada palavra deve estar presente no nome ou sobrenome
+            query = query.filter(
+                db.or_(
+                    Cliente.nome.ilike(f'%{palavra}%'),
+                    Cliente.sobrenome.ilike(f'%{palavra}%')
+                )
+            )
+    
+    # Buscar agendamentos com os filtros aplicados
+    agendamentos = query.all()
     
     # Agrupar agendamentos por data
     agendamentos_por_data = {}
@@ -348,8 +372,8 @@ def agenda():
         # Adicionar o agendamento à lista da data correspondente
         agendamentos_por_data[data_formatada].append(agendamento)
     
-    # Renderizar o template com os agendamentos agrupados
-    return render_template('agenda.html', agendamentos_por_data=agendamentos_por_data)
+    # Renderizar o template com os agendamentos agrupados e o termo de busca
+    return render_template('agenda.html', agendamentos_por_data=agendamentos_por_data, nome_cliente=nome_cliente)
 
 
 # Rotas para gerenciamento de serviços
@@ -774,12 +798,24 @@ def admin_clientes():
     
     # Buscar clientes com filtro, se houver busca
     if busca:
-        clientes = Cliente.query.filter(
-            db.or_(
-                Cliente.nome.ilike(f'%{busca}%'),
-                Cliente.sobrenome.ilike(f'%{busca}%')
+        # Dividir o termo de busca em palavras individuais
+        palavras = busca.split()
+        
+        # Iniciar a consulta base
+        query = Cliente.query
+        
+        # Adicionar uma condição para cada palavra do termo de busca
+        for palavra in palavras:
+            # Cada palavra deve estar presente no nome ou sobrenome
+            query = query.filter(
+                db.or_(
+                    Cliente.nome.ilike(f'%{palavra}%'),
+                    Cliente.sobrenome.ilike(f'%{palavra}%')
+                )
             )
-        ).order_by(Cliente.nome).all()
+        
+        # Executar a consulta ordenada por nome
+        clientes = query.order_by(Cliente.nome).all()
     else:
         clientes = Cliente.query.order_by(Cliente.nome).all()
     

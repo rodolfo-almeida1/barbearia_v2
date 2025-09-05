@@ -1,0 +1,175 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}Gerir Utilizadores do Painel{% endblock %}
+
+{% block header %}Gerir Utilizadores do Painel{% endblock %}
+
+{% block styles %}
+<style>
+    .user-form {
+        background-color: #f8f9fa;
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: var(--box-shadow);
+    }
+    
+    .form-title {
+        margin-bottom: 1.5rem;
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+    
+    .user-table {
+        box-shadow: var(--box-shadow);
+    }
+    
+    .fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Formulário para adicionar novo utilizador -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="user-form fade-in">
+                <h4 class="form-title"><i class="fas fa-user-plus"></i> Adicionar Novo Utilizador</h4>
+                <form action="{{ url_for('admin_config_utilizadores') }}" method="POST">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="nome" class="form-label">Nome de Utilizador</label>
+                            <input type="text" class="form-control" id="nome" name="nome" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="senha" class="form-label">Senha</label>
+                            <input type="password" class="form-control" id="senha" name="senha" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="confirmar_senha" class="form-label">Confirmar Senha</label>
+                            <input type="password" class="form-control" id="confirmar_senha" name="confirmar_senha" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="funcao" class="form-label">Função</label>
+                            <select class="form-select" id="funcao" name="funcao" required>
+                                <option value="utilizador">Utilizador</option>
+                                <option value="super_admin">Super Admin</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tabela de utilizadores -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card user-table">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-users"></i> Utilizadores Registados</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID do Utilizador</th>
+                                    <th>Nome de Utilizador</th>
+                                    <th>Email</th>
+                                    <th>Data de Registo</th>
+                                    <th>Função</th>
+                                    <th>Estado</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for usuario in usuarios %}
+                                <tr class="fade-in" style="animation-delay: {{ loop.index * 0.05 }}s">
+                                    <td>{{ usuario.id }}</td>
+                                    <td>{{ usuario.nome }}</td>
+                                    <td>{{ usuario.email }}</td>
+                                    <td>{{ usuario.data_cadastro.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>
+                                        {% if usuario.funcao == 'super_admin' %}
+                                        <span class="badge bg-primary">Super Admin</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Utilizador</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if usuario.ativo %}
+                                        <span class="badge bg-success">Ativo</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Inativo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <form action="{{ url_for('admin_config_utilizadores_toggle', usuario_id=usuario.id) }}" method="POST" style="display: inline;">
+                                                {% if usuario.ativo %}
+                                                <button type="submit" class="btn btn-sm btn-warning" title="Desativar">
+                                                    <i class="fas fa-user-slash"></i>
+                                                </button>
+                                                {% else %}
+                                                <button type="submit" class="btn btn-sm btn-success" title="Ativar">
+                                                    <i class="fas fa-user-check"></i>
+                                                </button>
+                                                {% endif %}
+                                            </form>
+                                            <form action="{{ url_for('admin_config_utilizadores_excluir', usuario_id=usuario.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja excluir este utilizador?');">
+                                                <button type="submit" class="btn btn-sm btn-danger" title="Excluir">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center">Nenhum utilizador registado.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Validação de formulário
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            const senha = document.getElementById('senha').value;
+            const confirmarSenha = document.getElementById('confirmar_senha').value;
+            
+            if (senha !== confirmarSenha) {
+                event.preventDefault();
+                alert('As senhas não coincidem!');
+            }
+        });
+    });
+</script>
+{% endblock %}

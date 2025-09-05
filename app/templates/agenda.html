@@ -157,6 +157,26 @@
 
 {% block content %}
 <div class="container-fluid">
+    <!-- Formulário de filtro por nome de cliente -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form action="{{ url_for('agenda') }}" method="get" class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <label for="nome_cliente" class="form-label">Buscar por nome do cliente</label>
+                    <input type="text" class="form-control" id="nome_cliente" name="nome_cliente" placeholder="Digite o nome do cliente..." value="{{ nome_cliente }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-2"></i>Buscar</button>
+                </div>
+                {% if nome_cliente %}
+                <div class="col-md-2">
+                    <a href="{{ url_for('agenda') }}" class="btn btn-outline-secondary w-100"><i class="fas fa-times me-2"></i>Limpar</a>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    
     {% if agendamentos_por_data %}
         {% for data, agendamentos in agendamentos_por_data.items() %}
             <div class="card mb-4 shadow-sm fade-in">
@@ -182,7 +202,7 @@
                             </thead>
                             <tbody>
                                 {% for agendamento in agendamentos %}
-                                    <tr class="fade-in" style="animation-delay: {{ (loop.index * 0.05)|string + 's' }}">
+                                    <tr class="fade-in" style="animation-delay: {{ loop.index * 0.05 }}s">
                                         <td data-label="Hora">{{ agendamento.hora_inicio.strftime('%H:%M') }} - {{ agendamento.hora_fim.strftime('%H:%M') }}</td>
                                         <td data-label="Cliente">{{ agendamento.cliente.nome }} {{ agendamento.cliente.sobrenome }}</td>
                                         <td data-label="Serviço">{{ agendamento.servico.nome }}</td>
