@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from datetime import datetime
+from datetime import datetime, time
 from werkzeug.security import check_password_hash
 from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user
 import os
@@ -155,10 +155,16 @@ class Agendamento(db.Model):
         return f'<Agendamento {self.id} - {self.data} {self.hora_inicio}>'
 
 
-# Rota principal (apenas para teste inicial)
+# Rota principal - Página de agendamento
 @app.route('/')
 def index():
-    return 'Barbearia V2 - Aplicação Flask'
+    # Buscar todos os serviços ativos
+    servicos = Servico.query.filter_by(ativo=True).all()
+    
+    # Buscar todos os barbeiros ativos
+    barbeiros = Barbeiro.query.filter_by(ativo=True).all()
+    
+    return render_template('index.html', servicos=servicos, barbeiros=barbeiros)
 
 
 # Rota de logout
@@ -897,6 +903,191 @@ def agendamento_confirmar(id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'status': 'error', 'message': f'Erro ao confirmar agendamento: {str(e)}'}), 500
+
+
+# API para obter horários disponíveis
+@app.route('/api/horarios-disponiveis', methods=['GET'])
+def api_horarios_disponiveis():
+    # Obter parâmetros da requisição
+    data_str = request.args.get('data')
+    barbeiro_id = request.args.get('barbeiro_id')
+    servico_id = request.args.get('servico_id')
+    
+    # Validar parâmetros
+    if not data_str or not barbeiro_id or not servico_id:
+        return jsonify({
+            'status': 'error',
+            'message': 'Parâmetros incompletos. Data, barbeiro_id e servico_id são obrigatórios.'
+        }), 400
+    
+    try:
+        # Converter a data de string para objeto date
+        data = datetime.strptime(data_str, '%Y-%m-%d').date()
+        barbeiro_id = int(barbeiro_id)
+        servico_id = int(servico_id)
+        
+        # Buscar o serviço para saber a duração
+        servico = Servico.query.get(servico_id)
+        if not servico:
+            return jsonify({'status': 'error', 'message': 'Serviço não encontrado.'}), 404
+        
+        # Buscar o barbeiro
+        barbeiro = Barbeiro.query.get(barbeiro_id)
+        if not barbeiro:
+            return jsonify({'status': 'error', 'message': 'Barbeiro não encontrado.'}), 404
+        
+        # Determinar o dia da semana (0=Segunda, 1=Terça, ..., 6=Domingo)
+        dia_semana = data.weekday()
+        
+        # Buscar o horário de funcionamento do barbeiro para este dia
+        horario_funcionamento = HorarioFuncionamento.query.filter_by(
+            barbeiro_id=barbeiro_id,
+            dia_semana=dia_semana
+        ).first()
+        
+        # Se não houver horário definido para este dia, verificar o horário geral da barbearia
+        if not horario_funcionamento:
+            dia = DiaSemana.query.filter_by(id=dia_semana+1).first()
+            if not dia or not dia.ativo:
+                return jsonify({
+                    'status': 'error',
+                    'message': f'A barbearia não funciona neste dia.'
+                }), 400
+            hora_inicio = dia.hora_abertura
+            hora_fim = dia.hora_fechamento
+        else:
+            hora_inicio = horario_funcionamento.hora_inicio
+            hora_fim = horario_funcionamento.hora_fim
+        
+        # Buscar todos os agendamentos do barbeiro para esta data
+        agendamentos = Agendamento.query.filter_by(
+            barbeiro_id=barbeiro_id,
+            data=data,
+            status='agendado'
+        ).all()
+        
+        # Criar lista de horários ocupados
+        horarios_ocupados = []
+        for agendamento in agendamentos:
+            horarios_ocupados.append({
+                'inicio': agendamento.hora_inicio,
+                'fim': agendamento.hora_fim
+            })
+        
+        # Calcular horários disponíveis em intervalos de 30 minutos
+        horarios_disponiveis = []
+        duracao_servico = servico.duracao_minutos
+        
+        # Converter hora_inicio e hora_fim para minutos desde o início do dia
+        inicio_minutos = hora_inicio.hour * 60 + hora_inicio.minute
+        fim_minutos = hora_fim.hour * 60 + hora_fim.minute
+        
+        # Gerar horários possíveis em intervalos de 30 minutos
+        for minuto in range(inicio_minutos, fim_minutos - duracao_servico + 1, 30):
+            hora_atual = time(minuto // 60, minuto % 60)
+            hora_fim_atual = time((minuto + duracao_servico) // 60, (minuto + duracao_servico) % 60)
+            
+            # Verificar se este horário não conflita com nenhum agendamento existente
+            conflito = False
+            for ocupado in horarios_ocupados:
+                # Se o início do novo horário está dentro de um horário ocupado
+                if (ocupado['inicio'] <= hora_atual < ocupado['fim']) or \
+                   (ocupado['inicio'] < hora_fim_atual <= ocupado['fim']) or \
+                   (hora_atual <= ocupado['inicio'] and hora_fim_atual >= ocupado['fim']):
+                    conflito = True
+                    break
+            
+            if not conflito:
+                horarios_disponiveis.append({
+                    'hora_inicio': hora_atual.strftime('%H:%M'),
+                    'hora_fim': hora_fim_atual.strftime('%H:%M')
+                })
+        
+        return jsonify({
+            'status': 'success',
+            'horarios_disponiveis': horarios_disponiveis
+        })
+        
+    except ValueError as e:
+        return jsonify({'status': 'error', 'message': f'Erro de formato: {str(e)}'}), 400
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': f'Erro ao buscar horários disponíveis: {str(e)}'}), 500
+
+
+# Rota para finalizar o agendamento
+@app.route('/agendar', methods=['POST'])
+def agendar():
+    try:
+        # Obter dados do formulário JSON
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'status': 'error', 'message': 'Dados não fornecidos.'}), 400
+        
+        # Validar dados obrigatórios
+        required_fields = ['nome', 'telefone', 'servico_id', 'barbeiro_id', 'data', 'hora_inicio']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'status': 'error', 'message': f'Campo obrigatório não fornecido: {field}'}), 400
+        
+        # Buscar o serviço para calcular a hora de fim
+        servico = Servico.query.get(data['servico_id'])
+        if not servico:
+            return jsonify({'status': 'error', 'message': 'Serviço não encontrado.'}), 404
+        
+        # Converter a data e hora
+        data_agendamento = datetime.strptime(data['data'], '%Y-%m-%d').date()
+        hora_inicio = datetime.strptime(data['hora_inicio'], '%H:%M').time()
+        
+        # Calcular hora de fim baseado na duração do serviço
+        hora_fim_minutos = hora_inicio.hour * 60 + hora_inicio.minute + servico.duracao_minutos
+        hora_fim = time(hora_fim_minutos // 60, hora_fim_minutos % 60)
+        
+        # Verificar se já existe um cliente com este telefone
+        cliente = Cliente.query.filter_by(telefone=data['telefone']).first()
+        
+        # Se não existir, criar um novo cliente
+        if not cliente:
+            nome_completo = data['nome'].split(' ', 1)
+            nome = nome_completo[0]
+            sobrenome = nome_completo[1] if len(nome_completo) > 1 else ''
+            
+            cliente = Cliente(
+                nome=nome,
+                sobrenome=sobrenome,
+                email=data.get('email', f'{nome.lower()}{sobrenome.lower()}@exemplo.com'),  # Email padrão se não fornecido
+                telefone=data['telefone']
+            )
+            db.session.add(cliente)
+            db.session.flush()  # Para obter o ID do cliente sem fazer commit
+        
+        # Criar o agendamento
+        agendamento = Agendamento(
+            cliente_id=cliente.id,
+            barbeiro_id=data['barbeiro_id'],
+            servico_id=data['servico_id'],
+            data=data_agendamento,
+            hora_inicio=hora_inicio,
+            hora_fim=hora_fim,
+            status='agendado',
+            observacoes=data.get('observacoes', '')
+        )
+        
+        db.session.add(agendamento)
+        db.session.commit()
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Agendamento realizado com sucesso!',
+            'agendamento_id': agendamento.id
+        })
+        
+    except ValueError as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': f'Erro de formato: {str(e)}'}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': f'Erro ao realizar agendamento: {str(e)}'}), 500
 
 
 @app.route('/agendamento/cancelar/<int:id>', methods=['POST'])

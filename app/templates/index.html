@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barbearia - Agende seu Horário</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="agendamento-container">
+        <!-- Background com overlay -->
+        <div class="background"></div>
+        <div class="overlay"></div>
+        
+        <!-- Conteúdo principal -->
+        <div class="content">
+            <!-- Cabeçalho -->
+            <header class="header">
+                <h1>Agende seu Horário</h1>
+                <p>Escolha o serviço, barbeiro e horário de sua preferência para uma experiência personalizada</p>
+            </header>
+            
+            <!-- Mensagem de sucesso/erro -->
+            <div id="mensagem" class="mensagem" role="alert"></div>
+            
+            <!-- Container dos passos -->
+            <div class="passos-container">
+                <!-- Passo 1: Seleção de Serviço -->
+                <div id="passo1" class="passo ativo">
+                    <h2 class="passo-titulo">
+                        <i class="fas fa-cut"></i> Escolha o Serviço
+                    </h2>
+                    
+                    <div class="cards-container">
+                        {% for servico in servicos %}
+                            {% if servico.ativo %}
+                            <div class="card-selecao" 
+                                 data-id="{{ servico.id }}" 
+                                 data-duracao="{{ servico.duracao }}" 
+                                 tabindex="0"
+                                 role="button"
+                                 aria-pressed="false">
+                                <img src="{{ url_for('static', filename='img/servicos/' + servico.imagem) if servico.imagem else url_for('static', filename='img/servico-default.jpg') }}" 
+                                     alt="{{ servico.nome }}">
+                                <h3>{{ servico.nome }}</h3>
+                                <p>{{ servico.descricao }}</p>
+                                <div class="preco">R$ {{ "%.2f"|format(servico.preco) }}</div>
+                                <p class="duracao"><i class="far fa-clock"></i> {{ servico.duracao }} min</p>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Passo 2: Seleção de Barbeiro -->
+                <div id="passo2" class="passo">
+                    <button class="btn-voltar" onclick="voltarPasso(1)">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </button>
+                    
+                    <h2 class="passo-titulo">
+                        <i class="fas fa-user"></i> Escolha o Barbeiro
+                    </h2>
+                    
+                    <div class="cards-container">
+                        {% for barbeiro in barbeiros %}
+                            {% if barbeiro.ativo %}
+                            <div class="card-selecao" 
+                                 data-id="{{ barbeiro.id }}" 
+                                 tabindex="0"
+                                 role="button"
+                                 aria-pressed="false">
+                                <img src="{{ url_for('static', filename='img/barbeiros/' + barbeiro.foto) if barbeiro.foto else url_for('static', filename='img/barbeiro-default.jpg') }}" 
+                                     alt="{{ barbeiro.nome }}">
+                                <h3>{{ barbeiro.nome }}</h3>
+                                <p>{{ barbeiro.especialidade }}</p>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Passo 3: Seleção de Data e Horário -->
+                <div id="passo3" class="passo">
+                    <button class="btn-voltar" onclick="voltarPasso(2)">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </button>
+                    
+                    <h2 class="passo-titulo">
+                        <i class="far fa-calendar-alt"></i> Escolha a Data e Horário
+                    </h2>
+                    
+                    <div class="data-horario-container">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="data"><i class="fas fa-calendar-alt"></i> Data</label>
+                                    <input type="date" id="data" class="form-control" required>
+                                    <small class="form-text">Selecione uma data para ver os horários disponíveis</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="horario"><i class="fas fa-clock"></i> Horário Disponível</label>
+                                    <select id="horario" class="form-control" required>
+                                        <option value="">Selecione uma data primeiro</option>
+                                    </select>
+                                    <div id="loading-horarios" class="loading-spinner d-none">
+                                        <i class="fas fa-spinner fa-spin"></i> Carregando horários disponíveis...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 text-center">
+                        <button id="btn-proximo-3" class="btn btn-primary" disabled>
+                            Próximo <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Passo 4: Dados do Cliente -->
+                <div id="passo4" class="passo">
+                    <button class="btn-voltar" onclick="voltarPasso(3)">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </button>
+                    
+                    <h2 class="passo-titulo">
+                        <i class="far fa-user-circle"></i> Seus Dados
+                    </h2>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="nome">Nome Completo*</label>
+                                <input type="text" id="nome" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="telefone">Telefone*</label>
+                                <input type="tel" id="telefone" class="form-control" placeholder="(00) 00000-0000" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="observacoes">Observações (opcional)</label>
+                        <textarea id="observacoes" class="form-control" rows="3" placeholder="Alguma observação ou pedido especial?"></textarea>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button id="btn-finalizar" class="btn btn-primary">
+                            Finalizar Agendamento
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
