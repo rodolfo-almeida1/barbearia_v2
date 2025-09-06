@@ -197,7 +197,7 @@ body::before {
     animation: scaleIn 0.3s ease-out;
 }
 
-.card-selecao img {
+.card-selecao img, .servico-imagem {
     width: 80px;
     height: 80px;
     object-fit: cover;

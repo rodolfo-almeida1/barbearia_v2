@@ -202,13 +202,15 @@
                             </thead>
                             <tbody>
                                 {% for agendamento in agendamentos %}
-                                    <tr class="fade-in" style="animation-delay: {{ loop.index * 0.05 }}s">
+                                    <tr class="fade-in" data-delay="{{ loop.index }}">
                                         <td data-label="Hora">{{ agendamento.hora_inicio.strftime('%H:%M') }} - {{ agendamento.hora_fim.strftime('%H:%M') }}</td>
                                         <td data-label="Cliente">{{ agendamento.cliente.nome }} {{ agendamento.cliente.sobrenome }}</td>
                                         <td data-label="Serviço">{{ agendamento.servico.nome }}</td>
                                         <td data-label="Barbeiro">{{ agendamento.barbeiro.nome }} {{ agendamento.barbeiro.sobrenome }}</td>
                                         <td data-label="Status">
-                                            {% if agendamento.status == 'agendado' %}
+                                            {% if agendamento.status == 'pendente' %}
+                                                <span class="badge bg-secondary text-white">Pendente</span>
+                                            {% elif agendamento.status == 'agendado' %}
                                                 <span class="badge bg-warning text-dark">Agendado</span>
                                             {% elif agendamento.status == 'concluído' %}
                                                 <span class="badge bg-success">Concluído</span>
@@ -218,16 +220,33 @@
                                         </td>
                                         <td data-label="Ações" class="actions-cell">
                                             <div class="btn-group" role="group">
-                                                {% if agendamento.status == 'agendado' %}
-                                                    <button type="button" class="btn btn-sm btn-success" title="Confirmar">
+                                                {% if agendamento.status == 'pendente' %}
+                                                    <button type="button" class="btn btn-sm btn-success confirmar-btn" data-id="{{ agendamento.id }}" title="Confirmar">
                                                         <i class="fas fa-check"></i>
                                                         <span class="d-none d-md-inline ms-1">Confirmar</span>
                                                     </button>
-                                                    <button type="button" class="btn btn-sm btn-danger" title="Cancelar">
+                                                    <button type="button" class="btn btn-sm btn-danger cancelar-btn" data-id="{{ agendamento.id }}" title="Cancelar">
                                                         <i class="fas fa-times"></i>
                                                         <span class="d-none d-md-inline ms-1">Cancelar</span>
                                                     </button>
-                                                    <button type="button" class="btn btn-sm btn-primary" title="Reagendar">
+                                                    <button type="button" class="btn btn-sm btn-primary reagendar-btn" data-id="{{ agendamento.id }}" data-cliente="{{ agendamento.cliente.nome }} {{ agendamento.cliente.sobrenome }}" data-data="{{ data }}" data-horario="{{ agendamento.hora_inicio.strftime('%H:%M') }} - {{ agendamento.hora_fim.strftime('%H:%M') }}" title="Reagendar">
+                                                        <i class="fas fa-calendar-alt"></i>
+                                                        <span class="d-none d-md-inline ms-1">Reagendar</span>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-trocar" data-id="{{ agendamento.id }}" data-cliente="{{ agendamento.cliente.nome }} {{ agendamento.cliente.sobrenome }}" data-horario="{{ agendamento.hora_inicio.strftime('%H:%M') }} - {{ agendamento.hora_fim.strftime('%H:%M') }}" data-data="{{ data }}" title="Trocar">
+                                                        <i class="fas fa-exchange-alt"></i>
+                                                        <span class="d-none d-md-inline ms-1">Trocar</span>
+                                                    </button>
+                                                {% elif agendamento.status == 'agendado' %}
+                                                    <button type="button" class="btn btn-sm btn-info concluir-btn" data-id="{{ agendamento.id }}" title="Concluir Serviço">
+                                                        <i class="fas fa-clipboard-check"></i>
+                                                        <span class="d-none d-md-inline ms-1">Concluir Serviço</span>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-danger cancelar-btn" data-id="{{ agendamento.id }}" title="Cancelar">
+                                                        <i class="fas fa-times"></i>
+                                                        <span class="d-none d-md-inline ms-1">Cancelar</span>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-primary reagendar-btn" data-id="{{ agendamento.id }}" data-cliente="{{ agendamento.cliente.nome }} {{ agendamento.cliente.sobrenome }}" data-data="{{ data }}" data-horario="{{ agendamento.hora_inicio.strftime('%H:%M') }} - {{ agendamento.hora_fim.strftime('%H:%M') }}" title="Reagendar">
                                                         <i class="fas fa-calendar-alt"></i>
                                                         <span class="d-none d-md-inline ms-1">Reagendar</span>
                                                     </button>
@@ -259,6 +278,46 @@
         </div>
     {% endif %}
 </div>
+
+<!-- Modal de Reagendamento -->
+<div class="modal fade" id="modal-reagendamento" tabindex="-1" aria-labelledby="modalReagendamentoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalReagendamentoLabel"><i class="fas fa-calendar-alt me-2"></i>Reagendar Horário</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="lead mb-4" id="reagendamento-cliente-info">Reagendando para: <strong id="cliente-nome"></strong></p>
+                <p class="mb-3" id="reagendamento-atual-info">Horário atual: <strong id="horario-atual"></strong> em <strong id="data-atual"></strong></p>
+                
+                <form id="form-reagendamento">
+                    <input type="hidden" id="agendamento-id" name="agendamento_id" value="">
+                    
+                    <div class="mb-3">
+                        <label for="nova-data" class="form-label">Nova Data</label>
+                        <input type="date" class="form-control" id="nova-data" name="nova_data" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="novo-horario" class="form-label">Novo Horário</label>
+                        <select class="form-select" id="novo-horario" name="novo_horario" required>
+                            <option value="" selected disabled>Selecione uma data primeiro</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> Fechar
+                </button>
+                <button type="button" class="btn btn-primary" id="btn-salvar-reagendamento">
+                    <i class="fas fa-save me-1"></i> Salvar Alterações
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 
@@ -266,6 +325,175 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Lógica para o botão de reagendamento
+        document.querySelectorAll('.reagendar-btn').forEach(function(botao) {
+            botao.addEventListener('click', function(event) {
+                event.preventDefault();
+                
+                // Obter os detalhes do agendamento
+                const agendamentoId = this.getAttribute('data-id');
+                const clienteNome = this.getAttribute('data-cliente');
+                const dataAgendamento = this.getAttribute('data-data');
+                const horarioAgendamento = this.getAttribute('data-horario');
+                
+                // Preencher os dados no modal
+                document.getElementById('cliente-nome').textContent = clienteNome;
+                document.getElementById('horario-atual').textContent = horarioAgendamento;
+                document.getElementById('data-atual').textContent = dataAgendamento;
+                document.getElementById('agendamento-id').value = agendamentoId;
+                
+                // Definir a data mínima como hoje
+                const hoje = new Date();
+                const dataMinima = hoje.toISOString().split('T')[0];
+                document.getElementById('nova-data').setAttribute('min', dataMinima);
+                
+                // Limpar o select de horários
+                const selectHorario = document.getElementById('novo-horario');
+                selectHorario.innerHTML = '<option value="" selected disabled>Selecione uma data primeiro</option>';
+                
+                // Adicionar evento para carregar horários disponíveis quando a data for selecionada
+                document.getElementById('nova-data').addEventListener('change', function() {
+                    const dataEscolhida = this.value;
+                    // Obter o ID do agendamento atual
+                    const agendamentoId = document.getElementById('agendamento-id').value;
+                    
+                    // Encontrar o botão que contém os dados do agendamento
+                    const botaoReagendar = document.querySelector(`.reagendar-btn[data-id="${agendamentoId}"]`);
+                    
+                    // Obter a linha da tabela que contém o agendamento
+                    const row = botaoReagendar.closest('tr');
+                    
+                    // Obter o serviço e o barbeiro da linha
+                    const servicoNome = row.querySelector('td[data-label="Serviço"]').textContent.trim();
+                    const barbeiroNome = row.querySelector('td[data-label="Barbeiro"]').textContent.trim();
+                    
+                    // Como não temos os IDs diretamente, vamos fazer uma requisição para obter os horários
+                    // baseados no agendamento atual
+                    
+                    // Limpar o select
+                    selectHorario.innerHTML = '<option value="" selected disabled>Carregando horários...</option>';
+                    
+                    // Fazer requisição para obter horários disponíveis
+                    // Usamos o ID do agendamento para que o backend possa obter o serviço e barbeiro corretos
+                    fetch(`/api/horarios-disponiveis-reagendamento?data=${dataEscolhida}&agendamento_id=${agendamentoId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            // Limpar o select
+                            selectHorario.innerHTML = '';
+                            
+                            if (data.horarios && data.horarios.length > 0) {
+                                // Adicionar opção padrão
+                                selectHorario.innerHTML = '<option value="" selected disabled>Selecione um horário</option>';
+                                
+                                // Adicionar os horários disponíveis
+                                data.horarios.forEach(horario => {
+                                    const option = document.createElement('option');
+                                    option.value = horario;
+                                    option.textContent = horario;
+                                    selectHorario.appendChild(option);
+                                });
+                            } else {
+                                selectHorario.innerHTML = '<option value="" selected disabled>Nenhum horário disponível</option>';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Erro ao carregar horários:', error);
+                            selectHorario.innerHTML = '<option value="" selected disabled>Erro ao carregar horários</option>';
+                        });
+                });
+                
+                // Mostrar o modal
+                const modal = new bootstrap.Modal(document.getElementById('modal-reagendamento'));
+                modal.show();
+            });
+        });
+        
+        // Lógica para o botão de salvar reagendamento
+        document.getElementById('btn-salvar-reagendamento').addEventListener('click', function() {
+            // Verificar se o formulário está válido
+            const form = document.getElementById('form-reagendamento');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            // Obter os dados do formulário
+            const agendamentoId = document.getElementById('agendamento-id').value;
+            const novaData = document.getElementById('nova-data').value;
+            const novoHorario = document.getElementById('novo-horario').value;
+            
+            // Desabilitar o botão durante o processamento
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processando...';
+            
+            // Preparar os dados para enviar ao servidor
+            const dadosParaEnviar = {
+                agendamento_id: agendamentoId,
+                nova_data: novaData,
+                novo_horario: novoHorario
+            };
+            
+            // Enviar requisição para a API
+            fetch('/admin/agendamento/reagendar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(dadosParaEnviar)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro na resposta do servidor: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    // Fechar o modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('modal-reagendamento'));
+                    modal.hide();
+                    
+                    // Exibir mensagem de sucesso
+                    Swal.fire({
+                        title: 'Sucesso!',
+                        text: data.message || 'Agendamento reagendado com sucesso!',
+                        icon: 'success',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(),
+                        customClass: {
+                            popup: 'animate__animated animate__fadeInUp',
+                            confirmButton: 'btn btn-primary'
+                        }
+                    }).then(() => {
+                        // Recarregar a página para mostrar os horários atualizados
+                        window.location.reload();
+                    });
+                } else {
+                    throw new Error(data.message || 'Erro desconhecido');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                
+                // Reativar o botão
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-save me-1"></i> Salvar Alterações';
+                
+                // Exibir mensagem de erro
+                Swal.fire({
+                    title: 'Erro!',
+                    text: error.message || 'Ocorreu um erro ao reagendar o agendamento.',
+                    icon: 'error',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(),
+                    customClass: {
+                        popup: 'animate__animated animate__shakeX',
+                        confirmButton: 'btn btn-primary'
+                    }
+                });
+            });
+        });
+        
         // Aplicar classes de animação aos elementos da tabela
         const applyAnimations = () => {
             // Adicionar animações com atraso para cada linha da tabela
@@ -285,6 +513,12 @@
         
         // Executar animações após um pequeno atraso para garantir que a página esteja carregada
         setTimeout(applyAnimations, 100);
+        
+        // Aplicar atrasos de animação com base no atributo data-delay
+        document.querySelectorAll('.fade-in[data-delay]').forEach(element => {
+            const delay = parseFloat(element.getAttribute('data-delay')) * 0.05;
+            element.style.animationDelay = delay + 's';
+        });
         
         // Adicionar efeito de hover aos botões
         document.querySelectorAll('.btn').forEach(btn => {
@@ -382,8 +616,107 @@
             });
         });
         
+        // Adicionar evento de clique aos botões de concluir serviço
+        document.querySelectorAll('.concluir-btn').forEach(function(botao) {
+            botao.addEventListener('click', function(event) {
+                event.preventDefault();
+                const agendamentoRow = this.closest('tr');
+                const agendamentoId = this.getAttribute('data-id');
+                const statusCell = agendamentoRow.querySelector('td[data-label="Status"]');
+                const botoesAcao = this.closest('.btn-group');
+                
+                // Confirmar antes de concluir
+                Swal.fire({
+                    title: 'Confirmar conclusão',
+                    text: 'Confirmar que o serviço foi concluído?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sim, concluir',
+                    cancelButtonText: 'Não',
+                    confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--info').trim(),
+                    cancelButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--secondary').trim(),
+                    customClass: {
+                        popup: 'animate__animated animate__fadeInUp',
+                        confirmButton: 'btn btn-info',
+                        cancelButton: 'btn btn-secondary'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Desabilitar o botão durante o processamento
+                        this.disabled = true;
+                        this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+                        
+                        // Enviar requisição para concluir o serviço
+                        fetch(`/admin/agendamento/concluir/${agendamentoId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            }
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Erro na resposta do servidor: ' + response.status);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.status === 'success') {
+                                // Atualizar o status na interface
+                                statusCell.innerHTML = '<span class="badge bg-success animate__animated animate__fadeIn">Concluído</span>';
+                                
+                                // Atualizar os botões de ação para mostrar que o serviço está concluído
+                                botoesAcao.innerHTML = `
+                                    <button type="button" class="btn btn-sm btn-secondary" disabled>
+                                        <i class="fas fa-lock"></i>
+                                        <span class="d-none d-md-inline ms-1">Bloqueado</span>
+                                    </button>
+                                `;
+                                
+                                // Exibir mensagem de sucesso
+                                Swal.fire({
+                                    title: 'Sucesso!',
+                                    text: data.message,
+                                    icon: 'success',
+                                    confirmButtonText: 'OK',
+                                    confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(),
+                                    customClass: {
+                                        popup: 'animate__animated animate__fadeInUp',
+                                        confirmButton: 'btn btn-primary'
+                                    }
+                                });
+                                
+                                // Não é necessário adicionar event listeners aos novos botões, pois o serviço está concluído
+                            } else {
+                                throw new Error(data.message || 'Erro desconhecido');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Erro:', error);
+                            
+                            // Reativar o botão
+                            this.disabled = false;
+                            this.innerHTML = '<i class="fas fa-clipboard-check"></i><span class="d-none d-md-inline ms-1">Concluir Serviço</span>';
+                            
+                            // Exibir mensagem de erro
+                            Swal.fire({
+                                title: 'Erro!',
+                                text: error.message || 'Ocorreu um erro ao concluir o serviço.',
+                                icon: 'error',
+                                confirmButtonText: 'OK',
+                                confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(),
+                                customClass: {
+                                    popup: 'animate__animated animate__shakeX',
+                                    confirmButton: 'btn btn-primary'
+                                }
+                            });
+                        });
+                    }
+                });
+            });
+        });
+        
         // Adicionar evento de clique aos botões de cancelar
-        document.querySelectorAll('.btn-danger').forEach(function(botao) {
+        document.querySelectorAll('.cancelar-btn').forEach(function(botao) {
             botao.addEventListener('click', function(event) {
                 event.preventDefault();
                 const agendamentoRow = this.closest('tr');

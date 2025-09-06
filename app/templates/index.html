@@ -53,8 +53,9 @@
                                  tabindex="0"
                                  role="button"
                                  aria-pressed="false">
-                                <img src="{{ url_for('static', filename='img/servicos/' + servico.imagem) if servico.imagem else url_for('static', filename='img/servico-default.jpg') }}" 
-                                     alt="{{ servico.nome }}">
+                                <img src="{{ url_for('static', filename=servico.imagem_url) if servico.imagem_url else url_for('static', filename='img/servico-default.jpg') }}" 
+                                     alt="{{ servico.nome }}" 
+                                     class="servico-imagem">
                                 <h3>{{ servico.nome }}</h3>
                                 <p>{{ servico.descricao }}</p>
                                 <div class="preco">R$ {{ "%.2f"|format(servico.preco) }}</div>
@@ -153,7 +154,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="telefone">Telefone*</label>
-                                <input type="tel" id="telefone" class="form-control" placeholder="(00) 00000-0000" required>
+                                <input type="tel" id="telefone" class="form-control" placeholder="Ex: 11987654321" required>
                             </div>
                         </div>
                     </div>

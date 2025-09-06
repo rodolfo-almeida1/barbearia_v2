@@ -228,27 +228,37 @@ function carregarHorarios() {
         .then(data => {
             horarioSelect.innerHTML = '';
             
-            if (data.status === 'success' && data.horarios_disponiveis.length > 0) {
-                // Adicionar opção padrão
-                const defaultOption = document.createElement('option');
-                defaultOption.value = '';
-                defaultOption.textContent = 'Selecione um horário';
-                horarioSelect.appendChild(defaultOption);
-                
-                // Adicionar horários disponíveis
-                data.horarios_disponiveis.forEach(horario => {
+            if (data.status === 'success') {
+                if (data.horarios_disponiveis.length > 0) {
+                    // Adicionar opção padrão
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.textContent = 'Selecione um horário';
+                    horarioSelect.appendChild(defaultOption);
+                    
+                    // Adicionar horários disponíveis
+                    data.horarios_disponiveis.forEach(horario => {
+                        const option = document.createElement('option');
+                        option.value = horario.hora_inicio;
+                        option.textContent = `${horario.hora_inicio} - ${horario.hora_fim}`;
+                        horarioSelect.appendChild(option);
+                    });
+                    
+                    horarioSelect.disabled = false;
+                } else {
+                    // Lista vazia - barbearia fechada ou sem horários disponíveis
                     const option = document.createElement('option');
-                    option.value = horario.hora_inicio;
-                    option.textContent = `${horario.hora_inicio} - ${horario.hora_fim}`;
+                    option.value = '';
+                    option.textContent = 'Nenhum horário disponível para este dia';
+                    option.disabled = true;
                     horarioSelect.appendChild(option);
-                });
-                
-                horarioSelect.disabled = false;
+                    horarioSelect.disabled = true;
+                }
             } else {
-                // Sem horários disponíveis
+                // Erro real na comunicação com o servidor
                 const option = document.createElement('option');
                 option.value = '';
-                option.textContent = 'Sem horários disponíveis para esta data';
+                option.textContent = 'Erro ao carregar horários';
                 horarioSelect.appendChild(option);
             }
             
@@ -276,17 +286,17 @@ function finalizarAgendamento() {
         return;
     }
     
-    // Validar formato do telefone (opcional)
-    const telefoneRegex = /^\(\d{2}\)\s\d{4,5}-\d{4}$/;
-    if (!telefoneRegex.test(telefone)) {
-        mostrarMensagem('Por favor, insira um telefone válido no formato (00) 00000-0000.', 'erro');
+    // Validar formato do telefone (apenas números, 10 ou 11 dígitos)
+    const telefoneNumeros = telefone.replace(/\D/g, '');
+    if (telefoneNumeros.length !== 10 && telefoneNumeros.length !== 11) {
+        mostrarMensagem('Por favor, insira um telefone válido com 10 ou 11 dígitos.', 'erro');
         return;
     }
     
     // Preparar dados para envio
     const dados = {
         nome: nome,
-        telefone: telefone,
+        telefone: telefoneNumeros, // Enviar apenas os números do telefone
         observacoes: observacoes,
         servico_id: servicoSelecionado.id,
         barbeiro_id: barbeiroSelecionado,
