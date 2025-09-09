@@ -1,0 +1,300 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}Adicionar Novo Agendamento - Administração da Barbearia{% endblock %}
+
+{% block header %}Adicionar Novo Agendamento{% endblock %}
+
+{% block styles %}
+<!-- Flatpickr CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<!-- SweetAlert2 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.min.css">
+
+<style>
+    .card {
+        border-radius: var(--border-radius);
+        transition: all 0.3s ease;
+        margin-bottom: 1.5rem;
+    }
+    
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--box-shadow-hover);
+    }
+    
+    .form-control, .form-select {
+        border-radius: var(--border-radius-sm);
+    }
+    
+    .btn {
+        border-radius: var(--border-radius-sm);
+        transition: all 0.2s ease;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+    }
+    
+    /* Estilos para dispositivos móveis */
+    @media (max-width: 768px) {
+        .card-body {
+            padding: 1rem;
+        }
+        
+        .form-label {
+            margin-bottom: 0.3rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-calendar-plus me-2"></i>Formulário de Agendamento</h5>
+                </div>
+                <div class="card-body">
+                    <form id="form-agendamento" method="post" action="{{ url_for('admin_agendar') }}">
+                        <!-- Cliente -->
+                        <div class="mb-3">
+                            <label for="cliente_id" class="form-label"><i class="fas fa-user me-1"></i> Cliente</label>
+                            <select class="form-select" id="cliente_id" name="cliente_id" required>
+                                <option value="" selected disabled>Selecione um cliente</option>
+                                {% for cliente in clientes %}
+                                <option value="{{ cliente.id }}">{{ cliente.nome }} {{ cliente.sobrenome }} ({{ cliente.telefone }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Serviço -->
+                        <div class="mb-3">
+                            <label for="servico_id" class="form-label"><i class="fas fa-cut me-1"></i> Serviço</label>
+                            <select class="form-select" id="servico_id" name="servico_id" required>
+                                <option value="" selected disabled>Selecione um serviço</option>
+                                {% for servico in servicos %}
+                                <option value="{{ servico.id }}" data-duracao="{{ servico.duracao_minutos }}">{{ servico.nome }} ({{ servico.duracao_minutos }} min) - {{ servico.preco }}€</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Barbeiro -->
+                        <div class="mb-3">
+                            <label for="barbeiro_id" class="form-label"><i class="fas fa-user-tie me-1"></i> Barbeiro</label>
+                            <select class="form-select" id="barbeiro_id" name="barbeiro_id" required>
+                                <option value="" selected disabled>Selecione um barbeiro</option>
+                                {% for barbeiro in barbeiros %}
+                                <option value="{{ barbeiro.id }}">{{ barbeiro.nome }} {{ barbeiro.sobrenome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Data -->
+                        <div class="mb-3">
+                            <label for="data" class="form-label"><i class="fas fa-calendar me-1"></i> Data</label>
+                            <input type="date" class="form-control" id="data" name="data" required>
+                        </div>
+                        
+                        <!-- Hora -->
+                        <div class="mb-3">
+                            <label for="hora_inicio" class="form-label"><i class="fas fa-clock me-1"></i> Horário</label>
+                            <select class="form-select" id="hora_inicio" name="hora_inicio" required disabled>
+                                <option value="" selected disabled>Selecione a data, o barbeiro e o serviço primeiro</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Botões -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('agenda') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Voltar para Agenda
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Agendar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar Flatpickr para o campo de data
+        const dataInput = document.getElementById('data');
+        if (dataInput) {
+            flatpickr(dataInput, {
+                dateFormat: "Y-m-d",
+                minDate: "today",
+                locale: {
+                    firstDayOfWeek: 1,
+                    weekdays: {
+                        shorthand: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
+                        longhand: ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+                    },
+                    months: {
+                        shorthand: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                        longhand: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+                    }
+                },
+                onChange: function(selectedDates, dateStr) {
+                    verificarCamposECarregarHorarios();
+                }
+            });
+        }
+        
+        // Elementos do formulário
+        const servicoSelect = document.getElementById('servico_id');
+        const barbeiroSelect = document.getElementById('barbeiro_id');
+        const horaSelect = document.getElementById('hora_inicio');
+        const formAgendamento = document.getElementById('form-agendamento');
+        
+        // Event listeners para verificar campos e carregar horários disponíveis
+        if (servicoSelect) {
+            servicoSelect.addEventListener('change', verificarCamposECarregarHorarios);
+        }
+        if (barbeiroSelect) {
+            barbeiroSelect.addEventListener('change', verificarCamposECarregarHorarios);
+        }
+        
+        // Função para verificar se todos os campos necessários estão preenchidos
+        function verificarCamposECarregarHorarios() {
+            // Verificar se os elementos existem
+            if (!servicoSelect || !barbeiroSelect || !horaSelect) {
+                console.error('Elementos necessários não encontrados');
+                return;
+            }
+            
+            const servicoId = servicoSelect.value;
+            const barbeiroId = barbeiroSelect.value;
+            const dataAgendamento = document.getElementById('data').value;
+            
+            // Resetar e desabilitar o select de horários
+            horaSelect.innerHTML = '<option value="" selected disabled>Selecione a data, o barbeiro e o serviço primeiro</option>';
+            horaSelect.disabled = true;
+            
+            // Verificar se todos os campos necessários foram preenchidos
+            if (!servicoId || !barbeiroId || !dataAgendamento) {
+                console.log('Campos incompletos:', {
+                    servico: servicoId ? 'Preenchido' : 'Vazio',
+                    barbeiro: barbeiroId ? 'Preenchido' : 'Vazio',
+                    data: dataAgendamento ? 'Preenchido' : 'Vazio'
+                });
+                return;
+            }
+            
+            // Se todos os campos estão preenchidos, carregar os horários disponíveis
+            carregarHorariosDisponiveis(servicoId, barbeiroId, dataAgendamento);
+        }
+        
+        // Função para carregar horários disponíveis
+        function carregarHorariosDisponiveis(servicoId, barbeiroId, dataAgendamento) {
+            // Mostrar indicador de carregamento
+            horaSelect.innerHTML = '<option value="" selected disabled>Carregando horários disponíveis...</option>';
+            
+            // Fazer requisição para obter horários disponíveis
+            fetch(`/api/horarios-disponiveis?data=${encodeURIComponent(dataAgendamento)}&barbeiro_id=${encodeURIComponent(barbeiroId)}&servico_id=${encodeURIComponent(servicoId)}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Verificar se o elemento ainda existe no DOM
+                    if (!horaSelect) {
+                        console.error('Elemento select de horários não encontrado');
+                        return;
+                    }
+                    
+                    horaSelect.innerHTML = '';
+                    
+                    if (data.status === 'success' && data.horarios_disponiveis && data.horarios_disponiveis.length > 0) {
+                        // Adicionar opção padrão
+                        const defaultOption = document.createElement('option');
+                        defaultOption.value = '';
+                        defaultOption.disabled = true;
+                        defaultOption.selected = true;
+                        defaultOption.textContent = 'Selecione um horário';
+                        horaSelect.appendChild(defaultOption);
+                        
+                        // Adicionar horários disponíveis
+                        data.horarios_disponiveis.forEach(horario => {
+                            const option = document.createElement('option');
+                            option.value = horario.hora_inicio;
+                            option.textContent = `${horario.hora_inicio} - ${horario.hora_fim}`;
+                            horaSelect.appendChild(option);
+                        });
+                        
+                        // Habilitar o select
+                        horaSelect.disabled = false;
+                    } else {
+                        // Sem horários disponíveis
+                        const noOption = document.createElement('option');
+                        noOption.value = '';
+                        noOption.disabled = true;
+                        noOption.selected = true;
+                        noOption.textContent = 'Sem horários disponíveis para esta data';
+                        horaSelect.appendChild(noOption);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar horários:', error);
+                    horaSelect.innerHTML = '<option value="" selected disabled>Erro ao carregar horários</option>';
+                });
+        }
+        
+        // Submissão do formulário
+        if (formAgendamento) {
+            formAgendamento.addEventListener('submit', function(e) {
+                // Não previne o comportamento padrão para permitir o envio do formulário via POST tradicional
+                
+                // Verificar se todos os campos foram preenchidos
+                const clienteIdElement = document.getElementById('cliente_id');
+                const servicoIdElement = document.getElementById('servico_id');
+                const barbeiroIdElement = document.getElementById('barbeiro_id');
+                const dataAgendamentoElement = document.getElementById('data');
+                const horaInicioElement = document.getElementById('hora_inicio');
+                
+                // Verificar se todos os elementos existem
+                if (!clienteIdElement || !servicoIdElement || !barbeiroIdElement || !dataAgendamentoElement || !horaInicioElement) {
+                    e.preventDefault();
+                    console.error('Elementos do formulário não encontrados');
+                    Swal.fire({
+                        title: 'Erro!',
+                        text: 'Ocorreu um erro ao processar o formulário. Por favor, recarregue a página.',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                    return;
+                }
+                
+                const clienteId = clienteIdElement.value;
+                const servicoId = servicoIdElement.value;
+                const barbeiroId = barbeiroIdElement.value;
+                const dataAgendamento = dataAgendamentoElement.value;
+                const horaInicio = horaInicioElement.value;
+                
+                if (!clienteId || !servicoId || !barbeiroId || !dataAgendamento || !horaInicio) {
+                    e.preventDefault(); // Previne o envio apenas se houver campos não preenchidos
+                    Swal.fire({
+                        title: 'Atenção!',
+                        text: 'Por favor, preencha todos os campos obrigatórios.',
+                        icon: 'warning',
+                        confirmButtonText: 'OK'
+                    });
+                    return;
+                }
+            
+            // O formulário será enviado normalmente para a rota /admin/agendar via POST
+            // O backend processará os dados e redirecionará conforme necessário
+            });
+        }
+    });
+</script>
+{% endblock %}

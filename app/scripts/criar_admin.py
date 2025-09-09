@@ -17,7 +17,9 @@ def criar_admin():
         novo_admin = UsuarioAdmin(
             nome='Administrador',
             email='admin@barbearia.com',
-            senha_hash=generate_password_hash('admin123')
+            username='admin',
+            password_hash=generate_password_hash('admin123'),
+            funcao='administrador'
         )
         
         # Adiciona ao banco de dados

@@ -248,43 +248,54 @@
         // Aplicar classes de animação aos elementos da tabela
         const applyAnimations = () => {
             // Adicionar animações com atraso para cada linha da tabela
-            document.querySelectorAll('tr.fade-in').forEach((row, index) => {
-                setTimeout(() => {
-                    row.classList.add('animate__animated', 'animate__fadeIn');
-                }, index * 50);
-            });
+            const tableRows = document.querySelectorAll('tr.fade-in');
+            if (tableRows && tableRows.length > 0) {
+                tableRows.forEach((row, index) => {
+                    setTimeout(() => {
+                        row.classList.add('animate__animated', 'animate__fadeIn');
+                    }, index * 50);
+                });
+            }
             
             // Adicionar animações para os cards
-            document.querySelectorAll('.card.fade-in').forEach((card, index) => {
-                setTimeout(() => {
-                    card.classList.add('animate__animated', 'animate__fadeIn');
-                }, index * 100);
-            });
+            const cards = document.querySelectorAll('.card.fade-in');
+            if (cards && cards.length > 0) {
+                cards.forEach((card, index) => {
+                    setTimeout(() => {
+                        card.classList.add('animate__animated', 'animate__fadeIn');
+                    }, index * 100);
+                });
+            }
         };
         
         // Executar animações após um pequeno atraso para garantir que a página esteja carregada
         setTimeout(applyAnimations, 100);
         
         // Adicionar efeito de hover aos botões
-        document.querySelectorAll('.btn').forEach(btn => {
-            btn.addEventListener('mouseenter', function() {
-                if (!this.disabled) {
-                    this.classList.add('animate__animated', 'animate__pulse');
-                }
+        const buttons = document.querySelectorAll('.btn');
+        if (buttons && buttons.length > 0) {
+            buttons.forEach(btn => {
+                btn.addEventListener('mouseenter', function() {
+                    if (!this.disabled) {
+                        this.classList.add('animate__animated', 'animate__pulse');
+                    }
+                });
+                
+                btn.addEventListener('mouseleave', function() {
+                    this.classList.remove('animate__animated', 'animate__pulse');
+                });
             });
-            
-            btn.addEventListener('mouseleave', function() {
-                this.classList.remove('animate__animated', 'animate__pulse');
-            });
-        });
+        }
         
         // Formatação de valores monetários
         const precoInput = document.getElementById('preco');
-        precoInput.addEventListener('blur', function() {
-            if (this.value) {
-                this.value = parseFloat(this.value).toFixed(2);
-            }
-        });
+        if (precoInput) {
+            precoInput.addEventListener('blur', function() {
+                if (this.value) {
+                    this.value = parseFloat(this.value).toFixed(2);
+                }
+            });
+        }
     });
 </script>
 {% endblock %}

@@ -160,6 +160,10 @@
     <!-- Formulário de filtro por nome de cliente -->
     <div class="card mb-4 shadow-sm">
         <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Filtrar Agendamentos</h5>
+                <a href="{{ url_for('admin_agendar') }}" class="btn btn-success"><i class="fas fa-plus me-2"></i>Adicionar Novo Agendamento</a>
+            </div>
             <form action="{{ url_for('agenda') }}" method="get" class="row g-3 align-items-end">
                 <div class="col-md-6">
                     <label for="nome_cliente" class="form-label">Buscar por nome do cliente</label>
@@ -520,8 +524,8 @@
             element.style.animationDelay = delay + 's';
         });
         
-        // Adicionar efeito de hover aos botões
-        document.querySelectorAll('.btn').forEach(btn => {
+        // Adicionar efeito de hover aos botões dentro da tabela
+        document.querySelectorAll('.table-mobile-stack .btn').forEach(btn => {
             btn.addEventListener('mouseenter', function() {
                 if (!this.disabled) {
                     this.classList.add('animate__animated', 'animate__pulse');
@@ -544,7 +548,7 @@
         let primeiroAgendamentoRow = null;
         
         // Adicionar evento de clique aos botões de confirmar
-        document.querySelectorAll('.btn-success').forEach(function(botao) {
+        document.querySelectorAll('.confirmar-btn').forEach(function(botao) {
             botao.addEventListener('click', function(event) {
                 event.preventDefault();
                 const agendamentoRow = this.closest('tr');

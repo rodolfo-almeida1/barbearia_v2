@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <rect width="200" height="200" fill="#e0e0e0"/>
+  <text x="100" y="100" font-family="Arial" font-size="16" text-anchor="middle" fill="#666666">Imagem do Serviço</text>
+  <rect x="60" y="60" width="80" height="80" rx="5" fill="#999999"/>
+  <line x1="70" y1="80" x2="130" y2="80" stroke="#e0e0e0" stroke-width="4"/>
+  <line x1="70" y1="100" x2="130" y2="100" stroke="#e0e0e0" stroke-width="4"/>
+  <line x1="70" y1="120" x2="130" y2="120" stroke="#e0e0e0" stroke-width="4"/>
+</svg>

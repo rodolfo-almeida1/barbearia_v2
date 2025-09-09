@@ -106,7 +106,7 @@
                 <h5 class="card-title mb-0"><i class="fas fa-user-plus me-2"></i>Adicionar Novo Barbeiro</h5>
             </div>
             <div class="card-body">
-                <form action="{{ url_for('admin_barbeiros_adicionar') }}" method="POST">
+                <form action="{{ url_for('admin_barbeiros_adicionar') }}" method="POST" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label for="nome" class="form-label"><i class="fas fa-user me-1"></i> Nome</label>
                         <input type="text" class="form-control" id="nome" name="nome" required>
@@ -114,6 +114,11 @@
                     <div class="mb-3">
                         <label for="especialidade" class="form-label"><i class="fas fa-award me-1"></i> Especialidade</label>
                         <input type="text" class="form-control" id="especialidade" name="especialidade">
+                    </div>
+                    <div class="mb-3">
+                        <label for="foto" class="form-label"><i class="fas fa-image me-1"></i> Foto</label>
+                        <input type="file" class="form-control" id="foto" name="foto" accept="image/*">
+                        <small class="form-text text-muted">Formatos aceitos: JPG, PNG, GIF. Tamanho máximo: 2MB</small>
                     </div>
                     <button type="submit" class="btn btn-primary w-100 mt-3">
                         <i class="fas fa-save me-2"></i>Adicionar Barbeiro
@@ -137,6 +142,7 @@
                         <thead>
                             <tr>
                                 <th>ID</th>
+                                <th>Foto</th>
                                 <th>Nome</th>
                                 <th>Especialidade</th>
                                 <th>Status</th>
@@ -147,6 +153,13 @@
                             {% for barbeiro in barbeiros %}
                             <tr class="fade-in" style="animation-delay: {{ loop.index * 0.05 }}s">
                                 <td data-label="ID">{{ barbeiro.id }}</td>
+                                <td data-label="Foto">
+                                    {% if barbeiro.foto_url %}
+                                    <img src="{{ url_for('static', filename='uploads/barbeiros/' + barbeiro.foto_url) }}" alt="Foto de {{ barbeiro.nome }}" class="img-thumbnail" style="max-height: 50px; max-width: 50px;">
+                                    {% else %}
+                                    <i class="fas fa-user-circle fa-2x text-secondary"></i>
+                                    {% endif %}
+                                </td>
                                 <td data-label="Nome">{{ barbeiro.nome }}</td>
                                 <td data-label="Especialidade">{{ barbeiro.especialidade }}</td>
                                 <td data-label="Status">

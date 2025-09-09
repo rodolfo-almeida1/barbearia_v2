@@ -9,11 +9,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Calcular a data mínima (hoje + antecedência mínima em horas)
     const hoje = new Date();
     const dataMinima = new Date(hoje);
-    dataMinima.setHours(hoje.getHours() + parseInt(configAgendamento.antecedenciaMinima, 10));
+    dataMinima.setHours(hoje.getHours() + parseInt(configAgendamento.antecedenciaMinima || 0, 10));
     
     // Calcular a data máxima (hoje + janela máxima em dias)
     const dataMaxima = new Date(hoje);
-    dataMaxima.setDate(hoje.getDate() + parseInt(configAgendamento.janelaMaxima, 10));
+    dataMaxima.setDate(hoje.getDate() + parseInt(configAgendamento.janelaMaxima || 30, 10));
     
     // Formatar as datas para o formato YYYY-MM-DD
     const dataMinimaFormatada = dataMinima.toISOString().split('T')[0];
@@ -21,9 +21,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Aplicar as restrições ao campo de data
     const campoData = document.getElementById('data');
-    campoData.setAttribute('min', dataMinimaFormatada);
-    campoData.setAttribute('max', dataMaximaFormatada);
-    campoData.value = dataMinimaFormatada;
+    if (campoData) {
+        campoData.setAttribute('min', dataMinimaFormatada);
+        campoData.setAttribute('max', dataMaximaFormatada);
+        campoData.value = dataMinimaFormatada;
+    }
     
     // Inicializar os event listeners
     inicializarEventListeners();
@@ -35,52 +37,72 @@ document.addEventListener('DOMContentLoaded', function() {
 function inicializarEventListeners() {
     // Seleção de serviço (Passo 1)
     const servicosCards = document.querySelectorAll('#passo1 .card-selecao');
-    servicosCards.forEach(card => {
-        card.addEventListener('click', selecionarServico);
-        card.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                selecionarServico.call(this);
-            }
+    if (servicosCards && servicosCards.length > 0) {
+        servicosCards.forEach(card => {
+            card.addEventListener('click', selecionarServico);
+            card.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    selecionarServico.call(this);
+                }
+            });
         });
-    });
+    }
     
     // Seleção de barbeiro (Passo 2)
     const barbeirosCards = document.querySelectorAll('#passo2 .card-selecao');
-    barbeirosCards.forEach(card => {
-        card.addEventListener('click', selecionarBarbeiro);
-        card.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                selecionarBarbeiro.call(this);
-            }
+    if (barbeirosCards && barbeirosCards.length > 0) {
+        barbeirosCards.forEach(card => {
+            card.addEventListener('click', selecionarBarbeiro);
+            card.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    selecionarBarbeiro.call(this);
+                }
+            });
         });
-    });
+    }
     
     // Seleção de data (Passo 3)
-    document.getElementById('data').addEventListener('change', function() {
-        dataSelecionada = this.value;
-        carregarHorarios();
-    });
+    const campoData = document.getElementById('data');
+    if (campoData) {
+        campoData.addEventListener('change', function() {
+            dataSelecionada = this.value;
+            carregarHorarios();
+        });
+    }
     
     // Seleção de horário (Passo 3)
-    document.getElementById('horario').addEventListener('change', function() {
-        horarioSelecionado = this.value;
-        // Habilitar o botão de próximo quando um horário for selecionado
-        document.getElementById('btn-proximo-3').disabled = !horarioSelecionado;
-    });
+    const selectHorario = document.getElementById('horario');
+    if (selectHorario) {
+        selectHorario.addEventListener('change', function() {
+            horarioSelecionado = this.value;
+            // Habilitar o botão de próximo quando um horário for selecionado
+            const btnProximo3 = document.getElementById('btn-proximo-3');
+            if (btnProximo3) {
+                btnProximo3.disabled = !horarioSelecionado;
+            }
+        });
+    }
     
     // Botão próximo do passo 3
-    document.getElementById('btn-proximo-3').addEventListener('click', function() {
-        avancarPasso(3, 4);
-    });
+    const btnProximo3 = document.getElementById('btn-proximo-3');
+    if (btnProximo3) {
+        btnProximo3.addEventListener('click', function() {
+            avancarPasso(3, 4);
+        });
+    }
     
     // Finalizar agendamento
-    document.getElementById('btn-finalizar').addEventListener('click', finalizarAgendamento);
+    const btnFinalizar = document.getElementById('btn-finalizar');
+    if (btnFinalizar) {
+        btnFinalizar.addEventListener('click', finalizarAgendamento);
+    }
     
     // Carregar horários iniciais se a data já estiver preenchida
-    if (document.getElementById('data').value) {
-        dataSelecionada = document.getElementById('data').value;
+    const dataInicial = document.getElementById('data');
+    if (dataInicial && dataInicial.value) {
+        dataSelecionada = dataInicial.value;
     }
 }
 
@@ -144,6 +166,12 @@ function avancarPasso(atual, proximo) {
     const passoAtual = document.getElementById(`passo${atual}`);
     const passoProximo = document.getElementById(`passo${proximo}`);
     
+    // Verificar se os elementos existem
+    if (!passoAtual || !passoProximo) {
+        console.error(`Elementos de passo ${atual} ou ${proximo} não encontrados`);
+        return;
+    }
+    
     // Adicionar classe para iniciar animação de saída
     passoAtual.classList.remove('ativo');
     passoAtual.classList.add('slide-out-left');
@@ -161,13 +189,18 @@ function avancarPasso(atual, proximo) {
         // Se estiver avançando para o passo 3, focar no campo de data
         if (proximo === 3) {
             setTimeout(() => {
-                document.getElementById('data').focus();
+                const dataField = document.getElementById('data');
+                if (dataField) {
+                    dataField.focus();
+                }
             }, 100);
         }
         
         // Remover a classe de animação após a conclusão
         setTimeout(() => {
-            passoProximo.classList.remove('slide-in-right');
+            if (passoProximo) { // Verificar novamente, pois pode ter sido removido
+                passoProximo.classList.remove('slide-in-right');
+            }
         }, 500);
     }, 500);
 }
@@ -179,6 +212,12 @@ function avancarPasso(atual, proximo) {
 function voltarPasso(passo) {
     const passoAtual = document.querySelector('.passo.ativo');
     const passoAnterior = document.getElementById(`passo${passo}`);
+    
+    // Verificar se os elementos existem
+    if (!passoAtual || !passoAnterior) {
+        console.error(`Elemento de passo atual ou passo ${passo} não encontrado`);
+        return;
+    }
     
     passoAtual.classList.remove('ativo');
     passoAtual.classList.add('fade-out');
@@ -192,7 +231,9 @@ function voltarPasso(passo) {
         passoAnterior.classList.add('ativo');
         
         setTimeout(() => {
-            passoAnterior.classList.remove('fade-in');
+            if (passoAnterior) { // Verificar novamente, pois pode ter sido removido
+                passoAnterior.classList.remove('fade-in');
+            }
         }, 500);
     }, 500);
 }
@@ -202,7 +243,13 @@ function voltarPasso(passo) {
  */
 function carregarHorarios() {
     if (!dataSelecionada) {
-        dataSelecionada = document.getElementById('data').value;
+        const dataElement = document.getElementById('data');
+        if (dataElement) {
+            dataSelecionada = dataElement.value;
+        } else {
+            console.error('Elemento de data não encontrado');
+            return;
+        }
     }
     
     if (!servicoSelecionado || !barbeiroSelecionado || !dataSelecionada) {
@@ -212,13 +259,21 @@ function carregarHorarios() {
     const horarioSelect = document.getElementById('horario');
     const loadingSpinner = document.getElementById('loading-horarios');
     
+    if (!horarioSelect) {
+        console.error('Elemento select de horários não encontrado');
+        return;
+    }
+    
     // Mostrar indicador de carregamento
     horarioSelect.disabled = true;
     horarioSelect.innerHTML = '<option value="">Carregando horários...</option>';
-    loadingSpinner.classList.remove('d-none');
+    
+    if (loadingSpinner) {
+        loadingSpinner.classList.remove('d-none');
+    }
     
     // Fazer requisição AJAX para a API
-    fetch(`/api/horarios-disponiveis?data=${dataSelecionada}&barbeiro_id=${barbeiroSelecionado}&servico_id=${servicoSelecionado.id}`)
+    fetch(`/api/horarios-disponiveis?data=${encodeURIComponent(dataSelecionada)}&barbeiro_id=${encodeURIComponent(barbeiroSelecionado)}&servico_id=${encodeURIComponent(servicoSelecionado.id)}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error('Erro na resposta da rede');
@@ -226,10 +281,16 @@ function carregarHorarios() {
             return response.json();
         })
         .then(data => {
+            // Verificar se o elemento ainda existe
+            if (!horarioSelect) {
+                console.error('Elemento select de horários não encontrado após requisição');
+                return;
+            }
+            
             horarioSelect.innerHTML = '';
             
             if (data.status === 'success') {
-                if (data.horarios_disponiveis.length > 0) {
+                if (data.horarios_disponiveis && data.horarios_disponiveis.length > 0) {
                     // Adicionar opção padrão
                     const defaultOption = document.createElement('option');
                     defaultOption.value = '';
@@ -263,12 +324,21 @@ function carregarHorarios() {
             }
             
             // Esconder indicador de carregamento
-            loadingSpinner.classList.add('d-none');
+            if (loadingSpinner) {
+                loadingSpinner.classList.add('d-none');
+            }
         })
         .catch(error => {
             console.error('Erro ao carregar horários:', error);
-            horarioSelect.innerHTML = '<option value="">Erro ao carregar horários</option>';
-            loadingSpinner.classList.add('d-none');
+            
+            // Verificar se o elemento ainda existe
+            if (horarioSelect) {
+                horarioSelect.innerHTML = '<option value="">Erro ao carregar horários</option>';
+            }
+            
+            if (loadingSpinner) {
+                loadingSpinner.classList.add('d-none');
+            }
         });
 }
 
@@ -276,9 +346,19 @@ function carregarHorarios() {
  * Função para finalizar o agendamento
  */
 function finalizarAgendamento() {
-    const nome = document.getElementById('nome').value;
-    const telefone = document.getElementById('telefone').value;
-    const observacoes = document.getElementById('observacoes').value;
+    // Verificar se os elementos existem antes de acessá-los
+    const nomeElement = document.getElementById('nome');
+    const telefoneElement = document.getElementById('telefone');
+    const observacoesElement = document.getElementById('observacoes');
+    
+    if (!nomeElement || !telefoneElement) {
+        mostrarMensagem('Erro ao processar o formulário. Elementos não encontrados.', 'erro');
+        return;
+    }
+    
+    const nome = nomeElement.value;
+    const telefone = telefoneElement.value;
+    const observacoes = observacoesElement ? observacoesElement.value : '';
     
     // Validar campos obrigatórios
     if (!nome || !telefone) {
@@ -290,6 +370,12 @@ function finalizarAgendamento() {
     const telefoneNumeros = telefone.replace(/\D/g, '');
     if (telefoneNumeros.length !== 10 && telefoneNumeros.length !== 11) {
         mostrarMensagem('Por favor, insira um telefone válido com 10 ou 11 dígitos.', 'erro');
+        return;
+    }
+    
+    // Verificar se todas as seleções necessárias foram feitas
+    if (!servicoSelecionado || !barbeiroSelecionado || !dataSelecionada || !horarioSelecionado) {
+        mostrarMensagem('Por favor, complete todas as etapas de seleção antes de finalizar.', 'erro');
         return;
     }
     
@@ -306,6 +392,11 @@ function finalizarAgendamento() {
     
     // Desabilitar botão para evitar múltiplos envios
     const btnFinalizar = document.getElementById('btn-finalizar');
+    if (!btnFinalizar) {
+        mostrarMensagem('Erro ao processar o formulário. Botão não encontrado.', 'erro');
+        return;
+    }
+    
     btnFinalizar.disabled = true;
     btnFinalizar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
     
@@ -326,9 +417,9 @@ function finalizarAgendamento() {
     .then(data => {
         if (data.status === 'success') {
             // Limpar formulário e mostrar mensagem de sucesso
-            document.getElementById('nome').value = '';
-            document.getElementById('telefone').value = '';
-            document.getElementById('observacoes').value = '';
+            if (nomeElement) nomeElement.value = '';
+            if (telefoneElement) telefoneElement.value = '';
+            if (observacoesElement) observacoesElement.value = '';
             
             // Mostrar mensagem de sucesso
             mostrarMensagem('Agendamento realizado com sucesso! Em breve entraremos em contato para confirmar.', 'sucesso');
@@ -343,16 +434,20 @@ function finalizarAgendamento() {
         }
         
         // Reabilitar botão
-        btnFinalizar.disabled = false;
-        btnFinalizar.innerHTML = 'Finalizar Agendamento';
+        if (btnFinalizar) {
+            btnFinalizar.disabled = false;
+            btnFinalizar.innerHTML = 'Finalizar Agendamento';
+        }
     })
     .catch(error => {
         console.error('Erro:', error);
         mostrarMensagem('Erro ao processar sua solicitação. Por favor, tente novamente.', 'erro');
         
         // Reabilitar botão
-        btnFinalizar.disabled = false;
-        btnFinalizar.innerHTML = 'Finalizar Agendamento';
+        if (btnFinalizar) {
+            btnFinalizar.disabled = false;
+            btnFinalizar.innerHTML = 'Finalizar Agendamento';
+        }
     });
 }
 
@@ -363,6 +458,13 @@ function finalizarAgendamento() {
  */
 function mostrarMensagem(texto, tipo) {
     const mensagemDiv = document.getElementById('mensagem');
+    
+    // Verificar se o elemento de mensagem existe
+    if (!mensagemDiv) {
+        console.error('Elemento de mensagem não encontrado');
+        return;
+    }
+    
     mensagemDiv.textContent = texto;
     mensagemDiv.className = `mensagem ${tipo}`;
     mensagemDiv.style.display = 'block';
@@ -372,7 +474,10 @@ function mostrarMensagem(texto, tipo) {
     
     // Esconder a mensagem após alguns segundos
     setTimeout(() => {
-        mensagemDiv.style.display = 'none';
+        // Verificar se o elemento ainda existe no DOM
+        if (mensagemDiv) {
+            mensagemDiv.style.display = 'none';
+        }
     }, 5000);
 }
 
@@ -386,15 +491,35 @@ function resetarFormulario() {
     // Limpar seleções
     servicoSelecionado = null;
     barbeiroSelecionado = null;
-    dataSelecionada = document.getElementById('data').value; // Manter a data atual
+    
+    // Manter a data atual se o elemento existir
+    const dataInput = document.getElementById('data');
+    if (dataInput) {
+        dataSelecionada = dataInput.value;
+    } else {
+        dataSelecionada = null;
+    }
+    
     horarioSelecionado = null;
     
     // Limpar seleções visuais
-    document.querySelectorAll('.card-selecao').forEach(card => {
-        card.classList.remove('selecionado');
-        card.setAttribute('aria-pressed', 'false');
-    });
+    const cards = document.querySelectorAll('.card-selecao');
+    if (cards && cards.length > 0) {
+        cards.forEach(card => {
+            card.classList.remove('selecionado');
+            card.setAttribute('aria-pressed', 'false');
+        });
+    }
     
-    document.getElementById('horario').innerHTML = '<option value="">Selecione uma data primeiro</option>';
-    document.getElementById('btn-proximo-3').disabled = true;
+    // Resetar o select de horários se existir
+    const horarioSelect = document.getElementById('horario');
+    if (horarioSelect) {
+        horarioSelect.innerHTML = '<option value="">Selecione uma data primeiro</option>';
+    }
+    
+    // Desabilitar o botão de próximo se existir
+    const btnProximo3 = document.getElementById('btn-proximo-3');
+    if (btnProximo3) {
+        btnProximo3.disabled = true;
+    }
 }

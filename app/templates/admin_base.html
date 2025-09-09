@@ -438,22 +438,28 @@
             function addAnimationClasses() {
                 // Adicionar classes de animação aos cards
                 const cards = document.querySelectorAll('.card');
-                cards.forEach((card, index) => {
-                    card.classList.add('slide-up');
-                    card.style.animationDelay = `${index * 0.1}s`;
-                });
+                if (cards && cards.length > 0) {
+                    cards.forEach((card, index) => {
+                        card.classList.add('slide-up');
+                        card.style.animationDelay = `${index * 0.1}s`;
+                    });
+                }
                 
                 // Adicionar classes de animação às tabelas
                 const tables = document.querySelectorAll('.table-responsive');
-                tables.forEach(table => {
-                    table.classList.add('fade-in');
-                });
+                if (tables && tables.length > 0) {
+                    tables.forEach(table => {
+                        table.classList.add('fade-in');
+                    });
+                }
                 
                 // Adicionar classes de animação aos formulários
                 const forms = document.querySelectorAll('form');
-                forms.forEach(form => {
-                    form.classList.add('fade-in');
-                });
+                if (forms && forms.length > 0) {
+                    forms.forEach(form => {
+                        form.classList.add('fade-in');
+                    });
+                }
             }
             
             // Executar animações após um pequeno delay para garantir que o DOM esteja pronto

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <rect width="200" height="200" fill="#e0e0e0"/>
+  <text x="100" y="100" font-family="Arial" font-size="16" text-anchor="middle" fill="#666666">Imagem do Barbeiro</text>
+  <circle cx="100" cy="70" r="30" fill="#999999"/>
+  <rect x="65" y="110" width="70" height="50" rx="5" fill="#999999"/>
+</svg>
