@@ -143,21 +143,21 @@
             </div>
             <div class="card-body">
                 <form action="{{ url_for('admin_barbeiros_editar', id=barbeiro.id) }}" method="POST" enctype="multipart/form-data">
-                    <div class="mb-3 fade-in" style="animation-delay: 0.1s">
+                    <div class="mb-3 fade-in" style="animation-delay: 0.1s;">
                         <label for="nome" class="form-label"><i class="fas fa-user me-1"></i> Nome</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-signature"></i></span>
                             <input type="text" class="form-control" id="nome" name="nome" value="{{ barbeiro.nome }}" required>
                         </div>
                     </div>
-                    <div class="mb-3 fade-in" style="animation-delay: 0.2s">
+                    <div class="mb-3 fade-in" style="animation-delay: 0.2s;">
                         <label for="especialidade" class="form-label"><i class="fas fa-award me-1"></i> Especialidade</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-certificate"></i></span>
                             <input type="text" class="form-control" id="especialidade" name="especialidade" value="{{ barbeiro.especialidade }}">
                         </div>
                     </div>
-                    <div class="mb-3 fade-in" style="animation-delay: 0.25s">
+                    <div class="mb-3 fade-in" style="animation-delay: 0.25s;">
                         <label for="foto" class="form-label"><i class="fas fa-image me-1"></i> Foto</label>
                         {% if barbeiro.foto_url %}
                         <div class="mb-2 text-center">
@@ -170,14 +170,14 @@
                         </div>
                         <small class="form-text text-muted">Formatos aceitos: JPG, PNG, GIF. Tamanho máximo: 2MB</small>
                     </div>
-                    <div class="mb-4 form-check fade-in" style="animation-delay: 0.3s">
+                    <div class="mb-4 form-check fade-in" style="animation-delay: 0.3s;">
                         <input type="checkbox" class="form-check-input" id="ativo" name="ativo" {% if barbeiro.ativo %}checked{% endif %}>
                         <label class="form-check-label" for="ativo">
                             <i id="statusIcon" class="fas {% if barbeiro.ativo %}fa-toggle-on text-success{% else %}fa-toggle-off text-danger{% endif %} toggle-icon"></i>
                             Barbeiro Ativo
                         </label>
                     </div>
-                    <div class="d-flex justify-content-between btn-actions fade-in" style="animation-delay: 0.4s">
+                    <div class="d-flex justify-content-between btn-actions fade-in" style="animation-delay: 0.4s;">
                         <a href="{{ url_for('admin_barbeiros') }}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left me-2"></i>Voltar
                         </a>

@@ -182,6 +182,10 @@ class Configuracao(db.Model):
     antecedencia_minima_horas = db.Column(db.Integer, default=2, nullable=True)
     # Número máximo de dias no futuro que um cliente pode fazer um agendamento
     janela_maxima_dias = db.Column(db.Integer, default=30, nullable=True)
+    # Credenciais da Twilio para integração com WhatsApp
+    twilio_account_sid = db.Column(db.String(255), nullable=True)
+    twilio_auth_token = db.Column(db.String(255), nullable=True)
+    twilio_whatsapp_number = db.Column(db.String(20), nullable=True)
     
     def __repr__(self):
         return f'<Configuracao {self.id} - {self.nome_barbearia}>'
@@ -707,6 +711,40 @@ def admin_config_avancadas():
     return render_template('admin_config_avancadas.html', config=config)
 
 
+@app.route('/admin/configuracoes/integracoes', methods=['GET', 'POST'])
+def admin_config_integracoes():
+    # Verificar se o usuário está logado
+    if 'admin_id' not in session:
+        flash('Por favor, faça login para acessar esta página.', 'warning')
+        return redirect(url_for('login'))
+    
+    # Buscar a configuração atual
+    config = Configuracao.query.first()
+    
+    if request.method == 'POST':
+        try:
+            # Obter dados do formulário
+            twilio_account_sid = request.form.get('twilio_account_sid')
+            twilio_auth_token = request.form.get('twilio_auth_token')
+            twilio_whatsapp_number = request.form.get('twilio_whatsapp_number')
+            
+            # Atualizar configuração
+            config.twilio_account_sid = twilio_account_sid
+            config.twilio_auth_token = twilio_auth_token
+            config.twilio_whatsapp_number = twilio_whatsapp_number
+            
+            # Salvar alterações
+            db.session.commit()
+            
+            flash('Credenciais da Twilio atualizadas com sucesso!', 'success')
+            return redirect(url_for('admin_config_integracoes'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao atualizar credenciais da Twilio: {str(e)}', 'danger')
+    
+    return render_template('admin_config_integracoes.html', config=config)
+
+
 @app.route('/admin/barbeiros')
 def admin_barbeiros():
     # Verificar se o usuário está logado
@@ -908,6 +946,59 @@ def admin_clientes():
     }
     
     return render_template('admin_clientes.html', clientes=clientes, url_for_security=url_for_security)
+
+@app.route('/admin/clientes/adicionar', methods=['POST'])
+def admin_clientes_adicionar():
+    # Verificar se o usuário está logado
+    if 'admin_id' not in session:
+        flash('Por favor, faça login para acessar esta página.', 'warning')
+        return redirect(url_for('login'))
+    
+    # Obter dados do formulário
+    nome = request.form.get('nome')
+    telefone = request.form.get('telefone')
+    
+    # Validar dados
+    if not nome or not telefone:
+        flash('Por favor, preencha todos os campos obrigatórios.', 'danger')
+        return redirect(url_for('admin_clientes'))
+    
+    # Validar o telefone usando a função existente
+    telefone_valido, mensagem_ou_telefone = validar_celular(telefone)
+    if not telefone_valido:
+        flash(f'Telefone inválido: {mensagem_ou_telefone}', 'danger')
+        return redirect(url_for('admin_clientes'))
+    
+    # Verificar se já existe um cliente com este telefone
+    cliente_existente = Cliente.query.filter_by(telefone=mensagem_ou_telefone).first()
+    if cliente_existente:
+        flash(f'Já existe um cliente cadastrado com este telefone: {cliente_existente.nome} {cliente_existente.sobrenome}', 'warning')
+        return redirect(url_for('admin_clientes'))
+    
+    try:
+        # Separar o nome completo em nome e sobrenome
+        partes_nome = nome.split(' ', 1)
+        primeiro_nome = partes_nome[0]
+        sobrenome = partes_nome[1] if len(partes_nome) > 1 else ''
+        
+        # Criar novo cliente
+        novo_cliente = Cliente(
+            nome=primeiro_nome,
+            sobrenome=sobrenome,
+            email=f'{primeiro_nome.lower()}{sobrenome.lower() if sobrenome else ''}@exemplo.com',  # Email padrão
+            telefone=mensagem_ou_telefone
+        )
+        
+        # Salvar no banco de dados
+        db.session.add(novo_cliente)
+        db.session.commit()
+        
+        flash(f'Cliente {nome} adicionado com sucesso!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao adicionar cliente: {str(e)}', 'danger')
+    
+    return redirect(url_for('admin_clientes'))
 
 
 # Rotas para gerenciar horários de funcionamento

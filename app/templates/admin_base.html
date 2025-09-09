@@ -368,6 +368,11 @@
                                             <i class="fas fa-tools"></i> Avançadas
                                         </a>
                                     </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link {% if request.path == '/admin/configuracoes/integracoes' %}active{% endif %}" href="{{ url_for('admin_config_integracoes') }}">
+                                            <i class="fas fa-plug"></i> Integrações
+                                        </a>
+                                    </li>
                                 </ul>
                             </div>
                         </li>

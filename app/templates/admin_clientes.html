@@ -133,6 +133,33 @@
 <div class="row mb-4">
     <div class="col-md-12">
         <div class="card fade-in">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0"><i class="fas fa-user-plus me-2"></i>Adicionar Novo Cliente</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('admin_clientes_adicionar') }}" method="POST" class="row g-3">
+                    <div class="col-md-6">
+                        <label for="nome" class="form-label"><i class="fas fa-user me-2"></i>Nome</label>
+                        <input type="text" class="form-control" id="nome" name="nome" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="telefone" class="form-label"><i class="fas fa-phone me-2"></i>Telefone</label>
+                        <input type="tel" class="form-control" id="telefone" name="telefone" placeholder="Ex: 11987654321" required>
+                    </div>
+                    <div class="col-12 mt-3">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-plus-circle me-2"></i>Adicionar Cliente
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card fade-in">
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0"><i class="fas fa-users me-2"></i>Lista de Clientes</h5>
                 <form class="d-flex search-form" action="{{ url_for('admin_clientes') }}" method="GET">
