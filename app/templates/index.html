@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Barbearia - Agende seu Horário</title>
     
+    <!-- Favicon -->
+    {% if config and config.favicon_url %}
+    <link rel="icon" href="{{ url_for('static', filename=config.favicon_url.replace('app/static/', '')) }}" type="image/x-icon">
+    {% else %}
+    <link rel="icon" href="{{ url_for('static', filename='img/default-favicon.ico') }}" type="image/x-icon">
+    {% endif %}
+    
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,8 +25,61 @@
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <style>
+        /* Estilos para os ícones de redes sociais flutuantes */
+        .social-icons-floating {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+        
+        .social-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .social-icon:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .social-icon.instagram {
+            background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+        }
+        
+        .social-icon.facebook {
+            background-color: #3b5998;
+        }
+    </style>
 </head>
 <body>
+    {% if config and config.exibir_redes_sociais %}
+    <div class="social-icons-floating">
+        {% if config.link_instagram %}
+        <a href="{{ config.link_instagram }}" target="_blank" class="social-icon instagram">
+            <i class="fab fa-instagram"></i>
+        </a>
+        {% endif %}
+        {% if config.link_facebook %}
+        <a href="{{ config.link_facebook }}" target="_blank" class="social-icon facebook">
+            <i class="fab fa-facebook-f"></i>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
     <div class="agendamento-container">
         <!-- Background com overlay -->
         <div class="background"></div>

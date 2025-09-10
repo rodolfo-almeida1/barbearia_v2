@@ -78,6 +78,26 @@
                         <small class="form-text text-muted">Número máximo de dias no futuro que um cliente pode fazer um agendamento.</small>
                     </div>
                     
+                    <div class="mb-3">
+                        <label for="intervalo_slot_minutos" class="form-label"><i class="fas fa-clock me-1"></i> Intervalo entre Horários (em minutos)</label>
+                        <select class="form-select" id="intervalo_slot_minutos" name="intervalo_slot_minutos">
+                            <option value="15" {% if config.intervalo_slot_minutos == 15 %}selected{% endif %}>15 minutos</option>
+                            <option value="20" {% if config.intervalo_slot_minutos == 20 %}selected{% endif %}>20 minutos</option>
+                            <option value="30" {% if config.intervalo_slot_minutos == 30 %}selected{% endif %}>30 minutos</option>
+                            <option value="60" {% if config.intervalo_slot_minutos == 60 %}selected{% endif %}>60 minutos</option>
+                        </select>
+                        <small class="form-text text-muted">O 'passo' do calendário, define os intervalos disponíveis para agendamento.</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="tempo_preparacao_minutos" class="form-label"><i class="fas fa-hourglass-half me-1"></i> Tempo de Preparação Entre Agendamentos (em minutos)</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="tempo_preparacao_minutos" name="tempo_preparacao_minutos" value="{{ config.tempo_preparacao_minutos }}" min="0" max="60">
+                            <span class="input-group-text">minutos</span>
+                        </div>
+                        <small class="form-text text-muted">Tempo extra a adicionar após cada agendamento para preparação.</small>
+                    </div>
+                    
 
                     
                     <div class="d-grid gap-2 mt-4">

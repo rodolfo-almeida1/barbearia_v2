@@ -76,7 +76,7 @@
                         <label for="logo" class="form-label"><i class="fas fa-image me-1"></i> Logótipo</label>
                         <div class="d-flex align-items-center mb-2">
                             {% if config.logo_url %}
-                            <img src="{{ config.logo_url }}" alt="Logo atual" class="me-3" style="max-height: 50px;">
+                            <img src="{{ config.logo_url }}" alt="Logo atual" class="me-3" style="max-height: 50px">
                             <span class="text-muted">Logo atual</span>
                             {% else %}
                             <span class="text-muted">Nenhum logo definido</span>
@@ -87,10 +87,21 @@
                     </div>
                     
                     <div class="mb-3">
+                        <label for="favicon" class="form-label"><i class="fas fa-bookmark me-1"></i> Favicon</label>
+                        {% if config.favicon_url %}
+                            <div class="mb-2">
+                                <img src="{{ url_for('static', filename=config.favicon_url.replace('app/static/', '')) }}" alt="Favicon atual" style="max-width: 32px; max-height: 32px; border: 1px solid #ddd; padding: 2px">
+                            </div>
+                        {% endif %}
+                        <input type="file" class="form-control" id="favicon" name="favicon" accept="image/x-icon,image/png,image/jpeg,image/svg+xml">
+                        <small class="text-muted">Ícone pequeno que aparece na aba do navegador. Deixe em branco para manter o favicon atual.</small>
+                    </div>
+                    
+                    <div class="mb-3">
                         <label for="cor_primaria" class="form-label"><i class="fas fa-palette me-1"></i> Cor Primária</label>
                         <div class="d-flex align-items-center">
                             <input type="color" class="form-control form-control-color" id="cor_primaria" name="cor_primaria" value="{{ config.cor_primaria }}" title="Escolha a cor primária">
-                            <div class="color-preview ms-2" style="background-color: {{ config.cor_primaria }}"></div>
+                            <div class="color-preview ms-2" style="background-color: {{ config.cor_primaria }};"></div>
                         </div>
                     </div>
                     
@@ -114,6 +125,11 @@
                     <div class="mb-4">
                         <label for="link_facebook" class="form-label"><i class="fab fa-facebook me-1"></i> Link do Facebook</label>
                         <input type="url" class="form-control" id="link_facebook" name="link_facebook" value="{{ config.link_facebook }}" placeholder="https://facebook.com/sua_barbearia">
+                    </div>
+                    
+                    <div class="mb-4 form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="exibir_redes_sociais" name="exibir_redes_sociais" {% if config.exibir_redes_sociais %}checked{% endif %}>
+                        <label class="form-check-label" for="exibir_redes_sociais">Exibir ícones de redes sociais na página de agendamento?</label>
                     </div>
                     
                     <div class="d-flex justify-content-between btn-actions">

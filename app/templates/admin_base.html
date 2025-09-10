@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Administração da Barbearia{% endblock %}</title>
+    <!-- Favicon -->
+    {% if config and config.favicon_url %}
+    <link rel="icon" href="{{ url_for('static', filename=config.favicon_url.replace('app/static/', '')) }}" type="image/x-icon">
+    {% else %}
+    <link rel="icon" href="{{ url_for('static', filename='img/default-favicon.ico') }}" type="image/x-icon">
+    {% endif %}
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome para ícones -->

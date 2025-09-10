@@ -178,10 +178,15 @@ class Configuracao(db.Model):
     endereco = db.Column(db.Text, nullable=True)
     link_instagram = db.Column(db.String(255), nullable=True)
     link_facebook = db.Column(db.String(255), nullable=True)
+    exibir_redes_sociais = db.Column(db.Boolean, default=False, nullable=False)
     # Tempo mínimo em horas que um cliente precisa dar de antecedência para agendar
     antecedencia_minima_horas = db.Column(db.Integer, default=2, nullable=True)
     # Número máximo de dias no futuro que um cliente pode fazer um agendamento
     janela_maxima_dias = db.Column(db.Integer, default=30, nullable=True)
+    # O 'passo' do calendário, em minutos
+    intervalo_slot_minutos = db.Column(db.Integer, default=30, nullable=True)
+    # Tempo extra a adicionar após cada agendamento
+    tempo_preparacao_minutos = db.Column(db.Integer, default=0, nullable=True)
     # Credenciais da Twilio para integração com WhatsApp
     twilio_account_sid = db.Column(db.String(255), nullable=True)
     twilio_auth_token = db.Column(db.String(255), nullable=True)
@@ -601,18 +606,41 @@ def admin_config_gerais():
             except Exception as e:
                 flash(f'Erro ao fazer upload do logo: {str(e)}', 'danger')
         
+        # Verificar se foi enviado um novo favicon
+        favicon_file = request.files.get('favicon')
+        favicon_url = config.favicon_url  # Manter o favicon atual por padrão
+        
+        if favicon_file and favicon_file.filename:
+            # Processar o upload do favicon
+            try:
+                # Garantir que o nome do arquivo seja seguro
+                filename = secure_filename(favicon_file.filename)
+                # Criar um nome único para o arquivo
+                unique_filename = f"favicon_{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
+                # Definir o caminho para salvar o arquivo
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+                # Salvar o arquivo
+                favicon_file.save(filepath)
+                # Atualizar a URL do favicon
+                favicon_url = f"/static/uploads/{unique_filename}"
+            except Exception as e:
+                flash(f'Erro ao fazer upload do favicon: {str(e)}', 'danger')
+        
         try:
             # Atualizar configuração
             config.nome_barbearia = nome_barbearia
             config.cor_primaria = cor_primaria
             if logo_url:
                 config.logo_url = logo_url
+            if favicon_url:
+                config.favicon_url = favicon_url
             
             # Atualizar informações de contato
             config.telefone = request.form.get('telefone')
             config.endereco = request.form.get('endereco')
             config.link_instagram = request.form.get('link_instagram')
             config.link_facebook = request.form.get('link_facebook')
+            config.exibir_redes_sociais = 'exibir_redes_sociais' in request.form
             
             # Salvar alterações
             db.session.commit()
@@ -694,10 +722,14 @@ def admin_config_avancadas():
             # Obter dados do formulário
             antecedencia_minima_horas = request.form.get('antecedencia_minima_horas', type=int)
             janela_maxima_dias = request.form.get('janela_maxima_dias', type=int)
+            intervalo_slot_minutos = request.form.get('intervalo_slot_minutos', type=int)
+            tempo_preparacao_minutos = request.form.get('tempo_preparacao_minutos', type=int)
             
             # Atualizar configuração
             config.antecedencia_minima_horas = antecedencia_minima_horas
             config.janela_maxima_dias = janela_maxima_dias
+            config.intervalo_slot_minutos = intervalo_slot_minutos
+            config.tempo_preparacao_minutos = tempo_preparacao_minutos
             
             # Salvar alterações
             db.session.commit()
