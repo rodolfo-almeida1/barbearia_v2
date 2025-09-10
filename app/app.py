@@ -160,6 +160,8 @@ class Agendamento(db.Model):
     status = db.Column(db.String(20), default='pendente')  # pendente, agendado, concluído, cancelado
     observacoes = db.Column(db.Text)
     data_agendamento = db.Column(db.DateTime, default=datetime.utcnow)
+    valor_pago = db.Column(db.Float, nullable=True)
+    metodo_pagamento = db.Column(db.String(50), nullable=True)
     
     def __repr__(self):
         return f'<Agendamento {self.id} - {self.data} {self.hora_inicio}>'
@@ -1999,19 +2001,35 @@ def admin_agendamento_concluir(agendamento_id):
     agendamento = Agendamento.query.get_or_404(agendamento_id)
     
     try:
-        # Atualizar o status do agendamento para 'concluído'
+        # Obter dados financeiros do formulário
+        dados = request.get_json()
+        valor_pago = dados.get('valor_pago')
+        metodo_pagamento = dados.get('metodo_pagamento')
+        
+        # Validar os dados recebidos
+        if not valor_pago or not metodo_pagamento:
+            return jsonify({
+                'status': 'error', 
+                'message': 'Valor pago e método de pagamento são obrigatórios.'
+            }), 400
+        
+        # Atualizar o agendamento com os dados financeiros
         agendamento.status = 'concluído'
+        agendamento.valor_pago = float(valor_pago)
+        agendamento.metodo_pagamento = metodo_pagamento
         db.session.commit()
         
         return jsonify({
             'status': 'success',
-            'message': 'Serviço concluído com sucesso!',
+            'message': 'Venda registrada e serviço concluído com sucesso!',
             'agendamento_id': agendamento.id,
-            'novo_status': 'concluído'
+            'novo_status': 'concluído',
+            'valor_pago': agendamento.valor_pago,
+            'metodo_pagamento': agendamento.metodo_pagamento
         })
     except Exception as e:
         db.session.rollback()
-        return jsonify({'status': 'error', 'message': f'Erro ao concluir serviço: {str(e)}'}), 500
+        return jsonify({'status': 'error', 'message': f'Erro ao registrar venda: {str(e)}'}), 500
 
 
 # Rota para página de agendamento manual (admin)
@@ -2294,6 +2312,91 @@ def admin_agendamento_criar():
     except Exception as e:
         db.session.rollback()
         return jsonify({'status': 'error', 'message': f'Erro ao criar agendamento: {str(e)}'}), 500
+
+
+# Criar um filtro personalizado para formatação de moeda
+@app.template_filter('format_currency')
+def format_currency(value):
+    if value is None:
+        return "-"
+    return f"{value:.2f}"
+
+# Rota para relatórios financeiros
+@app.route('/admin/financeiro')
+@login_required
+def admin_financeiro():
+    # Verificar se o usuário é admin
+    if not current_user.is_authenticated or not current_user.is_admin:
+        flash('Você não tem permissão para acessar esta página.', 'danger')
+        return redirect(url_for('login'))
+    
+    # Obter parâmetros de filtro de data
+    data_inicio_str = request.args.get('data_inicio')
+    data_fim_str = request.args.get('data_fim')
+    
+    # Converter strings para objetos de data
+    try:
+        if data_inicio_str:
+            data_inicio = datetime.strptime(data_inicio_str, '%Y-%m-%d').date()
+        else:
+            # Se não houver data de início, usar o primeiro dia do mês atual
+            hoje = datetime.now().date()
+            data_inicio = datetime(hoje.year, hoje.month, 1).date()
+            data_inicio_str = data_inicio.strftime('%Y-%m-%d')
+        
+        if data_fim_str:
+            data_fim = datetime.strptime(data_fim_str, '%Y-%m-%d').date()
+        else:
+            # Se não houver data de fim, usar a data atual
+            data_fim = datetime.now().date()
+            data_fim_str = data_fim.strftime('%Y-%m-%d')
+    except ValueError:
+        flash('Formato de data inválido. Use o formato YYYY-MM-DD.', 'danger')
+        return redirect(url_for('admin_financeiro'))
+    
+    # Buscar agendamentos concluídos no período especificado
+    agendamentos_concluidos = Agendamento.query.filter(
+        Agendamento.status == 'concluído',
+        Agendamento.data >= data_inicio,
+        Agendamento.data <= data_fim
+    ).order_by(Agendamento.data.desc(), Agendamento.hora_inicio).all()
+    
+    # Inicializar variáveis para somar os totais
+    total_dinheiro = 0.0
+    total_debito = 0.0
+    total_credito = 0.0
+    total_pix = 0.0
+    faturacao_total_concluida = 0.0
+    
+    # Iterar sobre cada agendamento na lista agendamentos_concluidos
+    for agendamento in agendamentos_concluidos:
+        if agendamento.valor_pago is not None:
+            # Adicionar o valor pago ao total de faturação
+            faturacao_total_concluida += agendamento.valor_pago
+            
+            # Verificar o método de pagamento e adicionar ao total correspondente
+            metodo = agendamento.metodo_pagamento.lower() if agendamento.metodo_pagamento else ''
+            
+            if 'dinheiro' in metodo:
+                total_dinheiro += agendamento.valor_pago
+            elif 'debito' in metodo or 'débito' in metodo:
+                total_debito += agendamento.valor_pago
+            elif 'credito' in metodo or 'crédito' in metodo:
+                total_credito += agendamento.valor_pago
+            elif 'pix' in metodo:
+                total_pix += agendamento.valor_pago
+    
+    return render_template(
+        'admin_financeiro.html',
+        agendamentos=agendamentos_concluidos,
+        total_faturado=faturacao_total_concluida,
+        total_dinheiro=total_dinheiro,
+        total_debito=total_debito,
+        total_credito=total_credito,
+        total_pix=total_pix,
+        data_inicio=data_inicio_str,
+        data_fim=data_fim_str
+    )
 
 
 # Execução da aplicação

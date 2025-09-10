@@ -209,7 +209,7 @@
                                     <tr class="fade-in" data-delay="{{ loop.index }}">
                                         <td data-label="Hora">{{ agendamento.hora_inicio.strftime('%H:%M') }} - {{ agendamento.hora_fim.strftime('%H:%M') }}</td>
                                         <td data-label="Cliente">{{ agendamento.cliente.nome }} {{ agendamento.cliente.sobrenome }}</td>
-                                        <td data-label="Serviço">{{ agendamento.servico.nome }}</td>
+                                        <td data-label="Serviço" data-preco="{{ agendamento.servico.preco }}">{{ agendamento.servico.nome }}</td>
                                         <td data-label="Barbeiro">{{ agendamento.barbeiro.nome }} {{ agendamento.barbeiro.sobrenome }}</td>
                                         <td data-label="Status">
                                             {% if agendamento.status == 'pendente' %}
@@ -281,6 +281,50 @@
             <i class="fas fa-info-circle me-2"></i> Não há agendamentos registrados.
         </div>
     {% endif %}
+</div>
+
+<!-- Modal PDV para Concluir Serviço -->
+<div class="modal fade" id="modal-pdv" tabindex="-1" aria-labelledby="modalPdvLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="modalPdvLabel"><i class="fas fa-cash-register me-2"></i>Registar Venda</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-pdv">
+                    <input type="hidden" id="pdv-agendamento-id" name="agendamento_id" value="">
+                    
+                    <div class="mb-3">
+                        <label for="valor-pago" class="form-label">Valor Pago</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input type="number" class="form-control" id="valor-pago" name="valor_pago" step="0.01" min="0" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="metodo-pagamento" class="form-label">Método de Pagamento</label>
+                        <select class="form-select" id="metodo-pagamento" name="metodo_pagamento" required>
+                            <option value="" selected disabled>Selecione o método de pagamento</option>
+                            <option value="Dinheiro">Dinheiro</option>
+                            <option value="Cartão de Débito">Cartão de Débito</option>
+                            <option value="Cartão de Crédito">Cartão de Crédito</option>
+                            <option value="PIX">PIX</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> Fechar
+                </button>
+                <button type="button" class="btn btn-info" id="btn-registrar-venda">
+                    <i class="fas fa-save me-1"></i> Registrar Venda
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Modal de Reagendamento -->
@@ -626,94 +670,121 @@
                 event.preventDefault();
                 const agendamentoRow = this.closest('tr');
                 const agendamentoId = this.getAttribute('data-id');
-                const statusCell = agendamentoRow.querySelector('td[data-label="Status"]');
-                const botoesAcao = this.closest('.btn-group');
                 
-                // Confirmar antes de concluir
+                // Obter o preço do serviço da tabela
+                const precoServico = agendamentoRow.querySelector('td[data-label="Serviço"]').getAttribute('data-preco') || '0.00';
+                
+                // Preencher o ID do agendamento no formulário do modal
+                document.getElementById('pdv-agendamento-id').value = agendamentoId;
+                
+                // Preencher o valor do serviço no campo de valor pago
+                document.getElementById('valor-pago').value = precoServico;
+                
+                // Abrir o modal PDV
+                const modalPdv = new bootstrap.Modal(document.getElementById('modal-pdv'));
+                modalPdv.show();
+            });
+        });
+        
+        // Adicionar evento de clique ao botão de registrar venda
+        document.getElementById('btn-registrar-venda').addEventListener('click', function() {
+            // Obter os dados do formulário
+            const agendamentoId = document.getElementById('pdv-agendamento-id').value;
+            const valorPago = document.getElementById('valor-pago').value;
+            const metodoPagamento = document.getElementById('metodo-pagamento').value;
+            
+            // Validar os dados
+            if (!valorPago || !metodoPagamento) {
                 Swal.fire({
-                    title: 'Confirmar conclusão',
-                    text: 'Confirmar que o serviço foi concluído?',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: 'Sim, concluir',
-                    cancelButtonText: 'Não',
-                    confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--info').trim(),
-                    cancelButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--secondary').trim(),
+                    title: 'Atenção!',
+                    text: 'Por favor, preencha todos os campos obrigatórios.',
+                    icon: 'warning',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(),
                     customClass: {
                         popup: 'animate__animated animate__fadeInUp',
-                        confirmButton: 'btn btn-info',
-                        cancelButton: 'btn btn-secondary'
+                        confirmButton: 'btn btn-primary'
                     }
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        // Desabilitar o botão durante o processamento
-                        this.disabled = true;
-                        this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
-                        
-                        // Enviar requisição para concluir o serviço
-                        fetch(`/admin/agendamento/concluir/${agendamentoId}`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            }
-                        })
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error('Erro na resposta do servidor: ' + response.status);
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            if (data.status === 'success') {
-                                // Atualizar o status na interface
-                                statusCell.innerHTML = '<span class="badge bg-success animate__animated animate__fadeIn">Concluído</span>';
-                                
-                                // Atualizar os botões de ação para mostrar que o serviço está concluído
-                                botoesAcao.innerHTML = `
-                                    <button type="button" class="btn btn-sm btn-secondary" disabled>
-                                        <i class="fas fa-lock"></i>
-                                        <span class="d-none d-md-inline ms-1">Bloqueado</span>
-                                    </button>
-                                `;
-                                
-                                // Exibir mensagem de sucesso
-                                Swal.fire({
-                                    title: 'Sucesso!',
-                                    text: data.message,
-                                    icon: 'success',
-                                    confirmButtonText: 'OK',
-                                    confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(),
-                                    customClass: {
-                                        popup: 'animate__animated animate__fadeInUp',
-                                        confirmButton: 'btn btn-primary'
-                                    }
-                                });
-                                
-                                // Não é necessário adicionar event listeners aos novos botões, pois o serviço está concluído
-                            } else {
-                                throw new Error(data.message || 'Erro desconhecido');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Erro:', error);
-                            
-                            // Reativar o botão
-                            this.disabled = false;
-                            this.innerHTML = '<i class="fas fa-clipboard-check"></i><span class="d-none d-md-inline ms-1">Concluir Serviço</span>';
-                            
-                            // Exibir mensagem de erro
-                            Swal.fire({
-                                title: 'Erro!',
-                                text: error.message || 'Ocorreu um erro ao concluir o serviço.',
-                                icon: 'error',
-                                confirmButtonText: 'OK',
-                                confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(),
-                                customClass: {
-                                    popup: 'animate__animated animate__shakeX',
-                                    confirmButton: 'btn btn-primary'
-                                }
-                            });
-                        });
+                });
+                return;
+            }
+            
+            // Desabilitar o botão durante o processamento
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processando...';
+            
+            // Obter referências para atualizar a UI após o sucesso
+            const agendamentoRow = document.querySelector(`.concluir-btn[data-id="${agendamentoId}"]`).closest('tr');
+            const statusCell = agendamentoRow.querySelector('td[data-label="Status"]');
+            const botoesAcao = agendamentoRow.querySelector('.btn-group');
+            
+            // Enviar requisição para concluir o serviço com os dados financeiros
+            fetch(`/admin/agendamento/concluir/${agendamentoId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    valor_pago: valorPago,
+                    metodo_pagamento: metodoPagamento
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro na resposta do servidor: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    // Fechar o modal
+                    const modalPdv = bootstrap.Modal.getInstance(document.getElementById('modal-pdv'));
+                    modalPdv.hide();
+                    
+                    // Atualizar o status na interface
+                    statusCell.innerHTML = '<span class="badge bg-success animate__animated animate__fadeIn">Concluído</span>';
+                    
+                    // Atualizar os botões de ação para mostrar que o serviço está concluído
+                    botoesAcao.innerHTML = `
+                        <button type="button" class="btn btn-sm btn-secondary" disabled>
+                            <i class="fas fa-lock"></i>
+                            <span class="d-none d-md-inline ms-1">Bloqueado</span>
+                        </button>
+                    `;
+                    
+                    // Exibir mensagem de sucesso
+                    Swal.fire({
+                        title: 'Venda Registrada!',
+                        text: data.message,
+                        icon: 'success',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(),
+                        customClass: {
+                            popup: 'animate__animated animate__fadeInUp',
+                            confirmButton: 'btn btn-primary'
+                        }
+                    });
+                } else {
+                    throw new Error(data.message || 'Erro desconhecido');
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                
+                // Reativar o botão
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-save me-1"></i> Registrar Venda';
+                
+                // Exibir mensagem de erro
+                Swal.fire({
+                    title: 'Erro!',
+                    text: error.message || 'Ocorreu um erro ao registrar a venda.',
+                    icon: 'error',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(),
+                    customClass: {
+                        popup: 'animate__animated animate__shakeX',
+                        confirmButton: 'btn btn-primary'
                     }
                 });
             });

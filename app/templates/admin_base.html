@@ -22,6 +22,49 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <!-- Estilos personalizados -->
     <style>
+        /* Estilos para forçar a ordem do menu lateral */
+        .nav.flex-column {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #menu-dashboard {
+            order: 1;
+        }
+        
+        #menu-agendamentos {
+            order: 2;
+        }
+        
+        #menu-financeiro {
+            order: 3;
+        }
+        
+        #menu-servicos {
+            order: 4;
+        }
+        
+        #menu-equipe {
+            order: 5;
+        }
+        
+        #menu-clientes {
+            order: 6;
+        }
+        
+        #menu-horarios {
+            order: 7;
+        }
+        
+        #menu-configuracoes {
+            order: 8;
+        }
+        
+        /* Exceção para o item de sair que deve ficar por último */
+        #menu-sair {
+            order: 100;
+        }
+        
         :root {
             --primary-color: #2c3e50;
             --secondary-color: #34495e;
@@ -309,32 +352,39 @@
                         <h4 class="navbar-brand mb-0">Barbearia Admin</h4>
                     </div>
                     <ul class="nav flex-column">
-                        <li class="nav-item">
+                        <li class="nav-item" id="menu-dashboard">
                             <a class="nav-link {% if request.path == '/admin/dashboard' %}active{% endif %}" href="{{ url_for('admin_dashboard') }}">
                                 <i class="fas fa-tachometer-alt"></i> Dashboard
                             </a>
                         </li>
-                        <li class="nav-item">
+                        <li class="nav-item" id="menu-agendamentos">
                             <a class="nav-link {% if request.path == '/agenda' %}active{% endif %}" href="{{ url_for('agenda') }}">
                                 <i class="fas fa-calendar-alt"></i> Agendamentos
                             </a>
                         </li>
-                        <li class="nav-item">
+                        
+                        <li class="nav-item" id="menu-financeiro">
+                            <a class="nav-link {% if request.path == '/admin/financeiro' %}active{% endif %}" href="{{ url_for('admin_financeiro') }}">
+                                <i class="fas fa-chart-line"></i> Financeiro
+                            </a>
+                        </li>
+
+                        <li class="nav-item" id="menu-servicos">
                             <a class="nav-link {% if request.path == '/admin/servicos' %}active{% endif %}" href="{{ url_for('admin_servicos') }}">
                                 <i class="fas fa-cut"></i> Serviços
                             </a>
                         </li>
-                        <li class="nav-item">
+                        <li class="nav-item" id="menu-equipe">
                             <a class="nav-link {% if request.path == '/admin/barbeiros' %}active{% endif %}" href="{{ url_for('admin_barbeiros') }}">
                                 <i class="fas fa-user-tie"></i> Gerir Equipe
                             </a>
                         </li>
-                        <li class="nav-item">
+                        <li class="nav-item" id="menu-clientes">
                             <a class="nav-link {% if request.path == '/admin/clientes' or '/admin/cliente/' in request.path %}active{% endif %}" href="{{ url_for('admin_clientes') }}">
                                 <i class="fas fa-users"></i> Gerir Clientes
                             </a>
                         </li>
-                        <li class="nav-item">
+                        <li class="nav-item" id="menu-horarios">
                             <a class="nav-link dropdown-toggle {% if '/admin/horarios' in request.path or '/admin/horarios_equipe' in request.path %}active{% endif %}" href="#" id="horariosDropdown" role="button" data-bs-toggle="collapse" data-bs-target="#horariosSubMenu" aria-expanded="{% if '/admin/horarios' in request.path or '/admin/horarios_equipe' in request.path %}true{% else %}false{% endif %}" aria-controls="horariosSubMenu">
                                 <i class="fas fa-clock"></i> Gerir Horários
                             </a>
@@ -353,7 +403,7 @@
                                 </ul>
                             </div>
                         </li>
-                        <li class="nav-item">
+                        <li class="nav-item" id="menu-configuracoes">
                             <a class="nav-link dropdown-toggle {% if '/admin/configuracoes' in request.path %}active{% endif %}" href="#" id="configDropdown" role="button" data-bs-toggle="collapse" data-bs-target="#configSubMenu" aria-expanded="{% if '/admin/configuracoes' in request.path %}true{% else %}false{% endif %}" aria-controls="configSubMenu">
                                 <i class="fas fa-cogs"></i> Configurações
                             </a>
@@ -382,7 +432,8 @@
                                 </ul>
                             </div>
                         </li>
-                        <li class="nav-item mt-5">
+                        <!-- Item Financeiro movido para após Agendamentos -->
+                        <li class="nav-item mt-5" id="menu-sair">
                             <a class="nav-link text-danger" href="{{ url_for('logout') }}">
                                 <i class="fas fa-sign-out-alt"></i> Sair
                             </a>

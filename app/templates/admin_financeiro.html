@@ -1,0 +1,224 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}Relatórios Financeiros | Administração da Barbearia{% endblock %}
+
+{% block header %}Relatórios Financeiros{% endblock %}
+
+{% block styles %}
+<style>
+    .filter-section {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    
+    .summary-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid #3498db;
+    }
+    
+    .summary-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .summary-card.total {
+        border-left-color: #2ecc71;
+    }
+    
+    .summary-card.dinheiro {
+        border-left-color: #f1c40f;
+    }
+    
+    .summary-card.debito {
+        border-left-color: #e74c3c;
+    }
+    
+    .summary-card.credito {
+        border-left-color: #9b59b6;
+    }
+    
+    .summary-card.pix {
+        border-left-color: #3498db;
+    }
+    
+    .summary-value {
+        font-size: 1.8rem;
+        font-weight: 600;
+    }
+    
+    .summary-label {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .table-financeiro th {
+        position: sticky;
+        top: 0;
+        background-color: #fff;
+        z-index: 10;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Filtros de Data -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="filter-section">
+                <form method="GET" action="{{ url_for('admin_financeiro') }}" class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label for="data_inicio" class="form-label">De:</label>
+                        <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ data_inicio }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="data_fim" class="form-label">Até:</label>
+                        <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ data_fim }}">
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-filter me-2"></i>Filtrar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Resumo Financeiro -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4 class="mb-3">Resumo Financeiro</h4>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card summary-card total">
+                <div class="card-body">
+                    <h5 class="summary-label">Faturação Total Concluída</h5>
+                    <div class="summary-value">R$ {{ total_faturado|format_currency }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card summary-card dinheiro">
+                <div class="card-body">
+                    <h5 class="summary-label">Total em Dinheiro</h5>
+                    <div class="summary-value">R$ {{ total_dinheiro|format_currency }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card summary-card debito">
+                <div class="card-body">
+                    <h5 class="summary-label">Total em Débito</h5>
+                    <div class="summary-value">R$ {{ total_debito|format_currency }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card summary-card credito">
+                <div class="card-body">
+                    <h5 class="summary-label">Total em Crédito</h5>
+                    <div class="summary-value">R$ {{ total_credito|format_currency }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="card summary-card pix">
+                <div class="card-body">
+                    <h5 class="summary-label">Total em PIX</h5>
+                    <div class="summary-value">R$ {{ total_pix|format_currency }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tabela de Agendamentos Concluídos -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Detalhamento de Vendas</h5>
+                    <span class="badge bg-primary">{{ agendamentos|length }} registros</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-financeiro">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Barbeiro</th>
+                                    <th>Serviço</th>
+                                    <th>Data e Hora</th>
+                                    <th>Valor Pago</th>
+                                    <th>Método de Pagamento</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if agendamentos %}
+                                    {% for agendamento in agendamentos %}
+                                    <tr>
+                                        <td>{{ agendamento.cliente.nome }}</td>
+                                        <td>{{ agendamento.barbeiro.nome }}</td>
+                                        <td>{{ agendamento.servico.nome }}</td>
+                                        <td>{{ agendamento.data.strftime('%d/%m/%Y') }} {{ agendamento.hora_inicio.strftime('%H:%M') }}</td>
+                                        <td>R$ {{ agendamento.valor_pago|format_currency }}</td>
+                                        <td>
+                                            {% if agendamento.metodo_pagamento == 'dinheiro' %}
+                                                <span class="badge bg-warning text-dark">Dinheiro</span>
+                                            {% elif agendamento.metodo_pagamento == 'debito' %}
+                                                <span class="badge bg-danger">Cartão de Débito</span>
+                                            {% elif agendamento.metodo_pagamento == 'credito' %}
+                                                <span class="badge bg-purple">Cartão de Crédito</span>
+                                            {% elif agendamento.metodo_pagamento == 'pix' %}
+                                                <span class="badge bg-info">PIX</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ agendamento.metodo_pagamento }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4">
+                                            <div class="alert alert-info mb-0">
+                                                <i class="fas fa-info-circle me-2"></i> Nenhum agendamento concluído encontrado para o período selecionado.
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Se não houver datas selecionadas, definir data inicial como primeiro dia do mês atual
+        // e data final como dia atual
+        if (!document.getElementById('data_inicio').value) {
+            const hoje = new Date();
+            const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+            
+            const formatarData = (data) => {
+                const ano = data.getFullYear();
+                const mes = String(data.getMonth() + 1).padStart(2, '0');
+                const dia = String(data.getDate()).padStart(2, '0');
+                return `${ano}-${mes}-${dia}`;
+            };
+            
+            document.getElementById('data_inicio').value = formatarData(primeiroDiaMes);
+            document.getElementById('data_fim').value = formatarData(hoje);
+        }
+    });
+</script>
+{% endblock %}
